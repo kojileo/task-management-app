@@ -9,8 +9,10 @@ using TaskManagement.API.Services;
 using System.Collections.Generic;
 using System.Linq;
 using TaskStatus = TaskManagement.API.Models.TaskStatus;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 
-namespace TaskManagement.Tests
+namespace TaskManagement.Tests.UnitTests.Controllers
 {
     public class TaskControllerTests
     {
@@ -227,6 +229,116 @@ namespace TaskManagement.Tests
 
             // Assert
             Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async Task Update_InvalidId_ReturnsBadRequest()
+        {
+            // Arrange
+            var taskId = 1;
+            var task = new TaskItem
+            {
+                Id = 2, // IDが一致しない
+                Title = "不一致IDタスク",
+                Description = "説明",
+                Status = TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "ユーザー"
+            };
+
+            // Act
+            var result = await _controller.Update(taskId, task);
+
+            // Assert
+            Assert.IsType<BadRequestResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task Update_WithInvalidModel_ReturnsBadRequest()
+        {
+            // Arrange
+            var taskId = 1;
+            var task = new TaskItem
+            {
+                Id = 1,
+                Title = "", // 無効なタイトル
+                Description = "説明",
+                Status = TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "ユーザー"
+            };
+
+            _controller.ModelState.AddModelError("Title", "タイトルは必須です");
+
+            // Act
+            var result = await _controller.Update(taskId, task);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task Create_ServiceThrowsException_ReturnsBadRequest()
+        {
+            // Arrange
+            var newTask = new TaskItem
+            {
+                Title = "新規タスク",
+                Description = "説明",
+                Status = TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "ユーザー"
+            };
+
+            _mockTaskService.Setup(s => s.CreateTaskAsync(It.IsAny<TaskItem>()))
+                .ThrowsAsync(new ArgumentException("無効なタスクデータ"));
+
+            // Act
+            var result = await _controller.Create(newTask);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Contains("無効なタスクデータ", badRequestResult.Value.ToString());
+        }
+
+        [Fact]
+        public async Task Update_ServiceThrowsArgumentException_ReturnsBadRequest()
+        {
+            // Arrange
+            var existingTask = new TaskItem
+            {
+                Id = 1,
+                Title = "更新タスク",
+                Description = "説明",
+                Status = TaskStatus.InProgress,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "ユーザー"
+            };
+
+            _mockTaskService.Setup(s => s.UpdateTaskAsync(It.IsAny<TaskItem>()))
+                .ThrowsAsync(new ArgumentException("無効なタスクデータ"));
+
+            // Act
+            var result = await _controller.Update(1, existingTask);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Contains("無効なタスクデータ", badRequestResult.Value.ToString());
+        }
+
+        [Fact]
+        public async Task Delete_ServiceThrowsException_ReturnsBadRequest()
+        {
+            // Arrange
+            _mockTaskService.Setup(s => s.DeleteTaskAsync(It.IsAny<int>()))
+                .ThrowsAsync(new Exception("予期しないエラー"));
+
+            // Act
+            var result = await _controller.Delete(1);
+
+            // Assert
+            var objectResult = Assert.IsType<ObjectResult>(result);
+            Assert.Contains("タスクの削除中にエラーが発生しました", objectResult.Value.ToString());
         }
     }
 } 

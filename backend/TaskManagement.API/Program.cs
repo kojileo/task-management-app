@@ -12,7 +12,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.AllowAnyOrigin()
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -57,7 +57,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 
 // Register services
-builder.Services.AddScoped<TaskService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
 
 var app = builder.Build();
 
@@ -71,10 +71,11 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
-
-// Use CORS
+// Apply CORS - must be before other middleware
 app.UseCors("AllowFrontend");
+
+// Disable HTTPS redirection for development
+// app.UseHttpsRedirection();
 
 app.UseAuthorization();
 

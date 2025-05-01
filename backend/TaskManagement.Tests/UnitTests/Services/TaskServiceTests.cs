@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace TaskManagement.Tests
+namespace TaskManagement.Tests.UnitTests.Services
 {
     public class TaskServiceTests
     {
@@ -459,6 +459,99 @@ namespace TaskManagement.Tests
             // Assert
             Assert.NotNull(result);
             Assert.Equal(currentDate.Date, result.DueDate.Date);
+        }
+
+        [Fact]
+        public async Task CreateTask_WithTitleTooLong_ThrowsException()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = new string('a', 101), // 101文字 (上限は100文字)
+                Description = "説明",
+                Status = TaskManagement.API.Models.TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "テストユーザー"
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => 
+                _taskService.CreateTaskAsync(task));
+        }
+
+        [Fact]
+        public async Task CreateTask_WithEmptyAssignedTo_ThrowsException()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = "テストタスク",
+                Description = "説明",
+                Status = TaskManagement.API.Models.TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "" // 空のAssignedTo
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => 
+                _taskService.CreateTaskAsync(task));
+        }
+
+        [Fact]
+        public async Task CreateTask_WithAssignedToTooLong_ThrowsException()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = "テストタスク",
+                Description = "説明",
+                Status = TaskManagement.API.Models.TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = new string('a', 51) // 51文字 (上限は50文字)
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => 
+                _taskService.CreateTaskAsync(task));
+        }
+
+        [Fact]
+        public async Task CreateTask_WithDescriptionTooLong_ThrowsException()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = "テストタスク",
+                Description = new string('a', 501), // 501文字 (上限は500文字)
+                Status = TaskManagement.API.Models.TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "テストユーザー"
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => 
+                _taskService.CreateTaskAsync(task));
+        }
+
+        [Fact]
+        public async Task CreateTask_WithNullDescription_CreatesSuccessfully()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = "テストタスク",
+                Description = null, // null description
+                Status = TaskManagement.API.Models.TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "テストユーザー"
+            };
+
+            // Act
+            var result = await _taskService.CreateTaskAsync(task);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Null(result.Description);
         }
     }
 } 

@@ -1,0 +1,76 @@
+name: TaskManagement CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: Restore dependencies
+      run: dotnet restore backend/TaskManagement.sln
+    
+    - name: Build
+      run: dotnet build backend/TaskManagement.sln --no-restore
+    
+    - name: Test
+      run: |
+        cd backend/TaskManagement.Tests
+        dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage"
+    
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        directory: backend/TaskManagement.Tests/TestResults
+        fail_ci_if_error: true
+        verbose: true
+    
+    - name: Check coverage thresholds
+      run: |
+        chmod +x ci/test-scripts/run-backend-tests.ps1
+        pwsh ci/test-scripts/run-backend-tests.ps1
+      shell: bash
+
+  build-and-test-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    
+    - name: Install dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Test
+      run: |
+        cd frontend
+        npm test -- --coverage
+    
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        directory: frontend/coverage
+        fail_ci_if_error: true
+        verbose: true 

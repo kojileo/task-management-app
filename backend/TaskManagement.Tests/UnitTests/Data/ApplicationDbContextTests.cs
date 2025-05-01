@@ -5,8 +5,10 @@ using TaskManagement.API.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using TaskStatus = TaskManagement.API.Models.TaskStatus;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace TaskManagement.Tests
+namespace TaskManagement.Tests.UnitTests.Data
 {
     public class ApplicationDbContextTests : IDisposable
     {
@@ -125,6 +127,126 @@ namespace TaskManagement.Tests
             // Assert
             Assert.NotNull(_context.Tasks);
             Assert.IsAssignableFrom<DbSet<TaskItem>>(_context.Tasks);
+        }
+
+        [Fact]
+        public async Task SaveChangesAsync_UpdatesUpdatedAtTimestamp()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = "タイムスタンプテスト",
+                Description = "説明",
+                Status = TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "ユーザー"
+            };
+
+            _context.Tasks.Add(task);
+            await _context.SaveChangesAsync();
+
+            // 時間の経過をシミュレート
+            await Task.Delay(10);
+
+            // 更新操作
+            task.Title = "更新されたタイトル";
+            var beforeUpdate = task.UpdatedAt;
+
+            // Act
+            await _context.SaveChangesAsync();
+
+            // Assert
+            Assert.NotEqual(beforeUpdate, task.UpdatedAt);
+            Assert.True(task.UpdatedAt > beforeUpdate);
+        }
+
+        [Fact]
+        public async Task SaveChangesAsync_TaskWithPastDueDate_SavesSuccessfully()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = "過去期限タスク",
+                Description = "説明",
+                Status = TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(-7), // 過去の日付
+                AssignedTo = "ユーザー"
+            };
+
+            // Act
+            _context.Tasks.Add(task);
+            var result = await _context.SaveChangesAsync();
+
+            // Assert
+            Assert.Equal(1, result);
+            var savedTask = await _context.Tasks.FindAsync(task.Id);
+            Assert.NotNull(savedTask);
+            Assert.Equal(task.DueDate.Date, savedTask.DueDate.Date);
+        }
+
+        [Fact]
+        public async Task SaveChangesAsync_TaskWithFutureDueDate_SavesSuccessfully()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = "将来期限タスク",
+                Description = "説明",
+                Status = TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(30), // 将来の日付
+                AssignedTo = "ユーザー"
+            };
+
+            // Act
+            _context.Tasks.Add(task);
+            var result = await _context.SaveChangesAsync();
+
+            // Assert
+            Assert.Equal(1, result);
+            var savedTask = await _context.Tasks.FindAsync(task.Id);
+            Assert.NotNull(savedTask);
+            Assert.Equal(task.DueDate.Date, savedTask.DueDate.Date);
+        }
+
+        [Fact]
+        public async Task SaveChangesAsync_MultipleEntities_SavesAllSuccessfully()
+        {
+            // Arrange
+            var tasks = new List<TaskItem>
+            {
+                new TaskItem
+                {
+                    Title = "一括タスク1",
+                    Description = "説明1",
+                    Status = TaskStatus.NotStarted,
+                    DueDate = DateTime.Now.AddDays(7),
+                    AssignedTo = "ユーザー1"
+                },
+                new TaskItem
+                {
+                    Title = "一括タスク2",
+                    Description = "説明2",
+                    Status = TaskStatus.InProgress,
+                    DueDate = DateTime.Now.AddDays(14),
+                    AssignedTo = "ユーザー2"
+                },
+                new TaskItem
+                {
+                    Title = "一括タスク3",
+                    Description = "説明3",
+                    Status = TaskStatus.Completed,
+                    DueDate = DateTime.Now.AddDays(21),
+                    AssignedTo = "ユーザー3"
+                }
+            };
+
+            // Act
+            _context.Tasks.AddRange(tasks);
+            var result = await _context.SaveChangesAsync();
+
+            // Assert
+            Assert.Equal(3, result);
+            Assert.Equal(3, await _context.Tasks.CountAsync());
         }
     }
 } 

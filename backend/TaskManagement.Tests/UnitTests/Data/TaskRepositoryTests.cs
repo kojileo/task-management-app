@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TaskStatus = TaskManagement.API.Models.TaskStatus;
 
-namespace TaskManagement.Tests
+namespace TaskManagement.Tests.UnitTests.Data
 {
     public class TaskRepositoryTests : IDisposable
     {
@@ -193,6 +193,84 @@ namespace TaskManagement.Tests
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => 
                 _repository.DeleteAsync(999));
+        }
+
+        [Fact]
+        public async Task UpdateAsync_ValidateProperties_UpdatesCorrectly()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = "更新前タスク",
+                Description = "更新前説明",
+                Status = TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "更新前ユーザー"
+            };
+
+            await _context.Tasks.AddAsync(task);
+            await _context.SaveChangesAsync();
+
+            // すべてのプロパティを更新
+            task.Title = "更新後タスク";
+            task.Description = "更新後説明";
+            task.Status = TaskStatus.Completed;
+            task.DueDate = DateTime.Now.AddDays(14);
+            task.AssignedTo = "更新後ユーザー";
+
+            // Act
+            var result = await _repository.UpdateAsync(task);
+            await _context.SaveChangesAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            
+            // すべてのプロパティが正しく更新されていることを確認
+            Assert.Equal("更新後タスク", result.Title);
+            Assert.Equal("更新後説明", result.Description);
+            Assert.Equal(TaskStatus.Completed, result.Status);
+            Assert.Equal(task.DueDate.Date, result.DueDate.Date);
+            Assert.Equal("更新後ユーザー", result.AssignedTo);
+            
+            // データベースに正しく保存されていることを確認
+            var savedTask = await _context.Tasks.FindAsync(task.Id);
+            Assert.NotNull(savedTask);
+            Assert.Equal("更新後タスク", savedTask.Title);
+            Assert.Equal("更新後説明", savedTask.Description);
+            Assert.Equal(TaskStatus.Completed, savedTask.Status);
+            Assert.Equal(task.DueDate.Date, savedTask.DueDate.Date);
+            Assert.Equal("更新後ユーザー", savedTask.AssignedTo);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_WithNullDescription_UpdatesCorrectly()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = "元のタスク",
+                Description = "元の説明",
+                Status = TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "テストユーザー"
+            };
+
+            await _context.Tasks.AddAsync(task);
+            await _context.SaveChangesAsync();
+
+            task.Description = null; // 説明をnullに更新
+
+            // Act
+            var result = await _repository.UpdateAsync(task);
+            await _context.SaveChangesAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Null(result.Description);
+            
+            var savedTask = await _context.Tasks.FindAsync(task.Id);
+            Assert.NotNull(savedTask);
+            Assert.Null(savedTask.Description);
         }
     }
 } 
