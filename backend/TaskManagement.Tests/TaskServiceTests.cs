@@ -310,5 +310,155 @@ namespace TaskManagement.Tests
             Assert.Equal(TaskManagement.API.Models.TaskStatus.Completed, result.Status);
             Assert.True(result.DueDate < DateTime.Now);
         }
+
+        [Fact]
+        public async Task CreateTask_WithMaxLengthFields_CreatesTaskSuccessfully()
+        {
+            // Arrange
+            var task = new TaskItem
+            {
+                Title = new string('a', 100), // 最大長
+                Description = new string('b', 500), // 最大長
+                Status = TaskManagement.API.Models.TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = new string('c', 50) // 最大長
+            };
+
+            // Act
+            var result = await _taskService.CreateTaskAsync(task);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(100, result.Title.Length);
+            Assert.Equal(500, result.Description.Length);
+            Assert.Equal(50, result.AssignedTo.Length);
+        }
+
+        [Fact]
+        public async Task UpdateTask_WithEmptyDescription_UpdatesSuccessfully()
+        {
+            // Arrange
+            var existingTask = new TaskItem
+            {
+                Title = "テストタスク",
+                Description = "説明",
+                Status = TaskManagement.API.Models.TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "テストユーザー"
+            };
+
+            await _context.Tasks.AddAsync(existingTask);
+            await _context.SaveChangesAsync();
+
+            var updatedTask = new TaskItem
+            {
+                Id = existingTask.Id,
+                Title = existingTask.Title,
+                Description = "", // 空の説明
+                Status = existingTask.Status,
+                DueDate = existingTask.DueDate,
+                AssignedTo = existingTask.AssignedTo
+            };
+
+            // Act
+            var result = await _taskService.UpdateTaskAsync(updatedTask);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal("", result.Description);
+        }
+
+        [Fact]
+        public async Task GetAllTasks_WithEmptyDatabase_ReturnsEmptyList()
+        {
+            // Act
+            var result = await _taskService.GetAllTasksAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Empty(result);
+        }
+
+        [Fact]
+        public async Task UpdateTask_WithSameData_UpdatesSuccessfully()
+        {
+            // Arrange
+            var existingTask = new TaskItem
+            {
+                Title = "テストタスク",
+                Description = "説明",
+                Status = TaskManagement.API.Models.TaskStatus.NotStarted,
+                DueDate = DateTime.Now.AddDays(7),
+                AssignedTo = "テストユーザー"
+            };
+
+            await _context.Tasks.AddAsync(existingTask);
+            await _context.SaveChangesAsync();
+
+            var updatedTask = new TaskItem
+            {
+                Id = existingTask.Id,
+                Title = existingTask.Title,
+                Description = existingTask.Description,
+                Status = existingTask.Status,
+                DueDate = existingTask.DueDate,
+                AssignedTo = existingTask.AssignedTo
+            };
+
+            // Act
+            var result = await _taskService.UpdateTaskAsync(updatedTask);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(existingTask.Title, result.Title);
+            Assert.Equal(existingTask.Description, result.Description);
+            Assert.Equal(existingTask.Status, result.Status);
+            Assert.Equal(existingTask.DueDate.Date, result.DueDate.Date);
+            Assert.Equal(existingTask.AssignedTo, result.AssignedTo);
+        }
+
+        [Fact]
+        public async Task CreateTask_WithFutureDueDate_CreatesTaskSuccessfully()
+        {
+            // Arrange
+            var futureDate = DateTime.Now.AddYears(1);
+            var task = new TaskItem
+            {
+                Title = "将来のタスク",
+                Description = "説明",
+                Status = TaskManagement.API.Models.TaskStatus.NotStarted,
+                DueDate = futureDate,
+                AssignedTo = "テストユーザー"
+            };
+
+            // Act
+            var result = await _taskService.CreateTaskAsync(task);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(futureDate.Date, result.DueDate.Date);
+        }
+
+        [Fact]
+        public async Task CreateTask_WithCurrentDueDate_CreatesTaskSuccessfully()
+        {
+            // Arrange
+            var currentDate = DateTime.Now;
+            var task = new TaskItem
+            {
+                Title = "今日のタスク",
+                Description = "説明",
+                Status = TaskManagement.API.Models.TaskStatus.NotStarted,
+                DueDate = currentDate,
+                AssignedTo = "テストユーザー"
+            };
+
+            // Act
+            var result = await _taskService.CreateTaskAsync(task);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(currentDate.Date, result.DueDate.Date);
+        }
     }
 } 
