@@ -50,6 +50,46 @@ npm run start
 npm run test
 ```
 
+## 静的解析
+
+プロジェクトの品質を保つため、以下の静的解析ツールを導入しています。
+
+### TypeScript型チェック
+
+```bash
+npm run type-check
+```
+
+### ESLintによるコード品質チェック
+
+```bash
+npm run lint
+```
+
+コードの問題を自動的に修正する場合:
+
+```bash
+npm run lint:fix
+```
+
+### Prettierによるコードフォーマット
+
+```bash
+npm run format
+```
+
+### セキュリティスキャン
+
+```bash
+npm run security-scan
+```
+
+### 全ての静的解析を一度に実行
+
+```bash
+bash ci-scripts/static-analysis.sh
+```
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
