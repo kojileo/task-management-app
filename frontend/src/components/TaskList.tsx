@@ -35,39 +35,52 @@ function TaskCard({ task, onEdit, onDelete }: { task: TaskItem; onEdit: (task: T
         transition,
     };
 
+    const handleDelete = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onDelete(task.id);
+    };
+
+    const handleEdit = (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onEdit(task);
+    };
+
     return (
         <div
             ref={setNodeRef}
             style={style}
             {...attributes}
-            {...listeners}
-            className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-4 mb-3 cursor-move"
+            className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-4 mb-3"
         >
             <div className="flex justify-between items-start">
-                <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
+                <div {...listeners} className="cursor-move flex-grow">
+                    <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
+                    <p className="text-gray-600 text-sm mt-2">{task.description}</p>
+                    <div className="flex items-center justify-between mt-4">
+                        <span className="text-sm text-gray-500">
+                            期限: {new Date(task.dueDate).toLocaleDateString()}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                            担当: {task.assignedTo}
+                        </span>
+                    </div>
+                </div>
                 <div className="flex space-x-2">
                     <button
-                        onClick={() => onEdit(task)}
+                        onClick={handleEdit}
                         className="p-1 text-gray-500 hover:text-blue-500 transition-colors"
                     >
                         <PencilIcon className="h-5 w-5" />
                     </button>
                     <button
-                        onClick={() => onDelete(task.id)}
+                        onClick={handleDelete}
                         className="p-1 text-gray-500 hover:text-red-500 transition-colors"
                     >
                         <TrashIcon className="h-5 w-5" />
                     </button>
                 </div>
-            </div>
-            <p className="text-gray-600 text-sm mt-2">{task.description}</p>
-            <div className="flex items-center justify-between mt-4">
-                <span className="text-sm text-gray-500">
-                    期限: {new Date(task.dueDate).toLocaleDateString()}
-                </span>
-                <span className="text-sm text-gray-500">
-                    担当: {task.assignedTo}
-                </span>
             </div>
         </div>
     );

@@ -83,14 +83,22 @@ namespace TaskManagement.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
+            Console.WriteLine($"タスク削除リクエスト受信: ID = {id}");
             try
             {
                 await _taskService.DeleteTaskAsync(id);
+                Console.WriteLine($"タスク削除成功: ID = {id}");
                 return NoContent();
             }
             catch (KeyNotFoundException)
             {
+                Console.WriteLine($"タスクが見つかりません: ID = {id}");
                 return NotFound();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"タスク削除エラー: ID = {id}, エラー = {ex.Message}");
+                return StatusCode(500, new { message = "タスクの削除中にエラーが発生しました" });
             }
         }
     }
