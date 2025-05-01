@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/DotNetAnalyzers/StyleCopAnalyzers/master/StyleCop.Analyzers/StyleCop.Analyzers/Settings/stylecop.schema.json",
+  "settings": {
+    "documentationRules": {
+      "companyName": "TaskManagement",
+      "copyrightText": "Copyright (c) {companyName}. All rights reserved.",
+      "documentationCulture": "ja-JP",
+      "documentInterfaces": true,
+      "documentExposedElements": true,
+      "documentInternalElements": true,
+      "documentPrivateElements": false,
+      "documentPrivateFields": false
+    },
+    "layoutRules": {
+      "newlineAtEndOfFile": "require"
+    },
+    "namingRules": {
+      "includeInferredTupleElementNames": true,
+      "tupleElementNameCasing": "camelCase"
+    },
+    "orderingRules": {
+      "systemUsingDirectivesFirst": true,
+      "usingDirectivesPlacement": "outsideNamespace",
+      "elementOrder": [
+        "kind",
+        "accessibility",
+        "constant",
+        "static",
+        "readonly"
+      ]
+    }
+  }
+} 

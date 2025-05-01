@@ -61,4 +61,32 @@ jobs:
         directory: frontend/coverage
         fail_ci_if_error: true
         
+  backend-static-analysis:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+    
+    - name: .NET ツールインストール
+      run: |
+        dotnet tool install -g dotnet-code-metrics
+    
+    - name: 静的解析実行
+      run: |
+        cd backend/ci
+        pwsh -File run-backend-static.ps1
+      
+    - name: コードメトリクスレポートのアップロード
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-code-metrics
+        path: backend/TaskManagement.API/code-metrics.md
+        retention-days: 7
+        
   # バックエンドテストなど他のジョブも追加 
