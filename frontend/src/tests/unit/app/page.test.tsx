@@ -160,21 +160,40 @@ describe('Home', () => {
       fireEvent.click(newTaskButton);
     });
 
-    // フォームに入力して送信
+    // フォームに入力
     await act(async () => {
       fireEvent.change(screen.getByLabelText('タイトル'), {
         target: { value: '新規タスク' },
       });
+      fireEvent.change(screen.getByLabelText('説明'), {
+        target: { value: 'テスト説明' },
+      });
+      fireEvent.change(screen.getByLabelText('ステータス'), {
+        target: { value: TaskStatus.NotStarted },
+      });
+      fireEvent.change(screen.getByLabelText('期限'), {
+        target: { value: '2024-12-31' },
+      });
+      fireEvent.change(screen.getByLabelText('担当者'), {
+        target: { value: 'テストユーザー' },
+      });
     });
 
+    // フォームを送信
+    const form = screen.getByTestId('task-form');
     await act(async () => {
-      fireEvent.submit(screen.getByTestId('task-form'));
-      await Promise.resolve();
+      fireEvent.submit(form);
     });
 
     // エラーメッセージが表示されることを確認
     await waitFor(() => {
-      expect(taskApi.createTask).toHaveBeenCalled();
+      expect(taskApi.createTask).toHaveBeenCalledWith({
+        title: '新規タスク',
+        description: 'テスト説明',
+        status: TaskStatus.NotStarted,
+        dueDate: '2024-12-31',
+        assignedTo: 'テストユーザー',
+      });
     });
 
     await waitFor(() => {
