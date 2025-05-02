@@ -14,4 +14,11 @@ export interface TaskItem {
 }
 
 // フォームデータ用の型定義 - dueDateは必須
-export type TaskFormData = Omit<TaskItem, 'id'>;
+export interface TaskFormData {
+  id?: number;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  dueDate: string;
+  assignedTo: string;
+}

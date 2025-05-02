@@ -20,48 +20,50 @@ export default {
   },
 
   async createTask(task: TaskFormData): Promise<TaskItem> {
-    const requestBody = {
-      title: task.title,
-      description: task.description,
-      status: task.status || 'InProgress',
-      dueDate: new Date(task.dueDate + 'T00:00:00Z').toISOString(),
-      assignedTo: task.assignedTo,
-    };
+    try {
+      const requestBody = {
+        title: task.title,
+        description: task.description,
+        status: task.status || 'InProgress',
+        dueDate: new Date(task.dueDate + 'T00:00:00Z').toISOString(),
+        assignedTo: task.assignedTo,
+      };
 
-    const response = await fetch(`${API_BASE_URL}/api/Task`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
+      const response = await fetch(`${API_BASE_URL}/api/Task`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        throw new Error('タスクの作成に失敗しました');
+      }
+
+      const responseText = await response.text();
+      if (!responseText) {
+        const location = response.headers.get('location');
+        if (location) {
+          const taskId = location.split('/').pop();
+          return this.getTaskById(Number(taskId));
+        }
+        throw new Error('タスクの作成に失敗しました：レスポンスが空です');
+      }
+
+      const responseData = JSON.parse(responseText);
+      return {
+        id: responseData.Id,
+        title: responseData.Title,
+        description: responseData.Description,
+        status: responseData.Status,
+        dueDate: responseData.DueDate,
+        assignedTo: responseData.AssignedTo,
+      };
+    } catch (error) {
+      console.error('タスク作成エラー:', error);
       throw new Error('タスクの作成に失敗しました');
     }
-
-    console.log('レスポンスヘッダー:', Object.fromEntries(response.headers.entries()));
-    const responseText = await response.text();
-    console.log('レスポンスボディ:', responseText);
-
-    if (!responseText) {
-      const location = response.headers.get('location');
-      if (location) {
-        const taskId = location.split('/').pop();
-        return this.getTaskById(Number(taskId));
-      }
-      throw new Error('タスクの作成に失敗しました：レスポンスが空です');
-    }
-
-    const responseData = JSON.parse(responseText);
-    return {
-      id: responseData.Id,
-      title: responseData.Title,
-      description: responseData.Description,
-      status: responseData.Status,
-      dueDate: responseData.DueDate,
-      assignedTo: responseData.AssignedTo,
-    };
   },
 
   async updateTask(id: number, task: TaskItem): Promise<TaskItem> {

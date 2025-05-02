@@ -28,16 +28,19 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
     assignedTo: task?.assignedTo || '',
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
+    
     const validationResult = validateTaskForm(formData);
     if (!validationResult.isValid) {
       toast.error(validationResult.errors.title || '');
       return;
     }
 
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      id: task?.id,
+    });
   };
 
   return (
@@ -83,9 +86,11 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
-          <option value={TaskStatus.NotStarted}>未着手</option>
-          <option value={TaskStatus.InProgress}>進行中</option>
-          <option value={TaskStatus.Completed}>完了</option>
+          {Object.entries(statusLabels).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
         </select>
       </div>
 

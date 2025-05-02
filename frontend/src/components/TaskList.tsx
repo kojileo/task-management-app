@@ -31,10 +31,12 @@ function TaskCard({
   task,
   onEdit,
   onDelete,
+  onStatusChange,
 }: {
   task: TaskItem;
   onEdit: (task: TaskItem) => void;
   onDelete: (id: number) => void;
+  onStatusChange: (taskId: number, newStatus: TaskStatus) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
 
@@ -78,6 +80,7 @@ function TaskCard({
             onClick={handleEdit}
             className="p-1 text-gray-500 hover:text-blue-500 transition-colors"
             aria-label={`${task.title}を編集`}
+            data-testid={`edit-button-${task.id}`}
           >
             <PencilIcon className="h-5 w-5" />
           </button>
@@ -85,6 +88,7 @@ function TaskCard({
             onClick={handleDelete}
             className="p-1 text-gray-500 hover:text-red-500 transition-colors"
             aria-label={`${task.title}を削除`}
+            data-testid={`delete-button-${task.id}`}
           >
             <TrashIcon className="h-5 w-5" />
           </button>
@@ -131,6 +135,14 @@ export default function TaskList({
     );
   }
 
+  if (tasks.length === 0) {
+    return (
+      <div className="bg-white shadow rounded-lg p-6">
+        <p className="text-gray-500 text-center">タスクがありません</p>
+      </div>
+    );
+  }
+
   return (
     <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -156,6 +168,7 @@ export default function TaskList({
                     task={task} 
                     onEdit={onEdit} 
                     onDelete={onDelete} 
+                    onStatusChange={onStatusChange}
                   />
                 ))}
             </SortableContext>

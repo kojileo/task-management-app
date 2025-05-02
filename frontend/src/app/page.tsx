@@ -24,6 +24,7 @@ export default function Home() {
       const data = await taskApi.getAllTasks();
       setTasks(data);
     } catch (error) {
+      console.error('タスク取得エラー:', error);
       toast.error('タスクの取得に失敗しました');
     } finally {
       setLoading(false);
@@ -60,9 +61,10 @@ export default function Home() {
   const handleDeleteTask = async (id: number) => {
     try {
       await taskApi.deleteTask(id);
+      setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
       toast.success('タスクを削除しました');
-      fetchTasks();
     } catch (error) {
+      console.error('タスク削除エラー:', error);
       toast.error('タスクの削除に失敗しました');
     }
   };
@@ -88,6 +90,14 @@ export default function Home() {
       toast.error('タスクのステータス更新に失敗しました');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500" data-testid="loading-message">タスクを読み込み中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
