@@ -33,7 +33,6 @@ export default function Home() {
   const handleCreateTask = async (formData: TaskFormData) => {
     try {
       const createdTask = await taskApi.createTask(formData);
-      console.log('作成されたタスク:', createdTask);
       setTasks(prevTasks => [...prevTasks, createdTask]);
       toast.success('タスクを作成しました');
       setShowForm(false);
@@ -72,9 +71,18 @@ export default function Home() {
     try {
       const task = tasks.find(t => t.id === taskId);
       if (task) {
-        await taskApi.updateTask(taskId, { ...task, status: newStatus });
+        const updatedTask = await taskApi.updateTask(taskId, {
+          id: taskId,
+          title: task.title,
+          description: task.description,
+          assignedTo: task.assignedTo,
+          dueDate: task.dueDate,
+          status: newStatus,
+        });
+        setTasks(prevTasks =>
+          prevTasks.map(t => (t.id === taskId ? updatedTask : t))
+        );
         toast.success('タスクのステータスを更新しました');
-        fetchTasks();
       }
     } catch (error) {
       toast.error('タスクのステータス更新に失敗しました');

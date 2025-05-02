@@ -77,12 +77,14 @@ function TaskCard({
           <button
             onClick={handleEdit}
             className="p-1 text-gray-500 hover:text-blue-500 transition-colors"
+            aria-label={`${task.title}を編集`}
           >
             <PencilIcon className="h-5 w-5" />
           </button>
           <button
             onClick={handleDelete}
             className="p-1 text-gray-500 hover:text-red-500 transition-colors"
+            aria-label={`${task.title}を削除`}
           >
             <TrashIcon className="h-5 w-5" />
           </button>
@@ -104,7 +106,10 @@ export default function TaskList({
     if (over && active.id !== over.id) {
       const taskId = active.id as number;
       const newStatus = over.id as TaskStatus;
-      onStatusChange(taskId, newStatus);
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        onStatusChange(taskId, newStatus);
+      }
     }
   };
 
@@ -112,7 +117,7 @@ export default function TaskList({
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="bg-gray-100 rounded-lg p-4 animate-pulse">
+          <div key={i} className="bg-gray-100 rounded-lg p-4 animate-pulse" data-testid="skeleton-loading">
             <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
             {[...Array(3)].map((_, j) => (
               <div key={j} className="bg-white rounded-lg p-4 mb-3">
@@ -146,7 +151,12 @@ export default function TaskList({
               {tasks
                 .filter(t => t.status === status)
                 .map(task => (
-                  <TaskCard key={task.id} task={task} onEdit={onEdit} onDelete={onDelete} />
+                  <TaskCard 
+                    key={`${task.id}-${task.status}`}
+                    task={task} 
+                    onEdit={onEdit} 
+                    onDelete={onDelete} 
+                  />
                 ))}
             </SortableContext>
           </div>

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-
+import { toast } from 'react-hot-toast';
+import { validateTaskForm } from '@/lib/validation';
 import { TaskItem, TaskFormData, TaskStatus } from '@/types/task';
 
 interface TaskFormProps {
@@ -23,38 +24,28 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
     title: task?.title || '',
     description: task?.description || '',
     status: task?.status || TaskStatus.NotStarted,
-    dueDate: task && task.dueDate ? task.dueDate : currentDate,
+    dueDate: task?.dueDate || '',
     assignedTo: task?.assignedTo || '',
   });
-
-  const [error, setError] = useState<string>('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 日付のバリデーション
-    const selectedDate = new Date(formData.dueDate);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    if (selectedDate < today) {
-      setError('期限は今日以降の日付を選択してください');
+    const validationResult = validateTaskForm(formData);
+    if (!validationResult.isValid) {
+      toast.error(validationResult.errors.title || '');
       return;
     }
 
-    // デバッグ用のログ
-    console.log('送信するデータ:', {
-      ...formData,
-      status: Number(formData.status),
-      dueDate: new Date(formData.dueDate + 'T00:00:00Z').toISOString(),
-    });
-
-    setError('');
     onSubmit(formData);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-xl shadow-lg">
+    <form
+      className="space-y-6 bg-white p-6 rounded-xl shadow-lg"
+      onSubmit={handleSubmit}
+      data-testid="task-form"
+    >
       <div>
         <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
           タイトル
@@ -62,10 +53,10 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
         <input
           type="text"
           id="title"
-          value={formData.title}
-          onChange={e => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           required
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
 
@@ -75,10 +66,10 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
         </label>
         <textarea
           id="description"
-          value={formData.description}
-          onChange={e => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           rows={4}
+          value={formData.description}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
 
@@ -89,14 +80,12 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
         <select
           id="status"
           value={formData.status}
-          onChange={e => setFormData({ ...formData, status: e.target.value as TaskStatus })}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
-          {Object.entries(statusLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
+          <option value={TaskStatus.NotStarted}>未着手</option>
+          <option value={TaskStatus.InProgress}>進行中</option>
+          <option value={TaskStatus.Completed}>完了</option>
         </select>
       </div>
 
@@ -108,11 +97,9 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           type="date"
           id="dueDate"
           value={formData.dueDate}
-          onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          min={currentDate}
         />
-        {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
       </div>
 
       <div>
@@ -123,7 +110,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           type="text"
           id="assignedTo"
           value={formData.assignedTo}
-          onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
+          onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
@@ -140,7 +127,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           type="submit"
           className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
-          {task ? '更新' : '作成'}
+          保存
         </button>
       </div>
     </form>

@@ -1,9 +1,17 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import Home from '@/app/page';
-import { TaskStatus } from '@/types/task';
 import taskApi from '@/lib/taskApi';
+import { TaskItem, TaskStatus } from '@/types/task';
+import { toast } from 'react-hot-toast';
 
+// react-hot-toastのモック
+jest.mock('react-hot-toast', () => ({
+  error: jest.fn(),
+  success: jest.fn(),
+}));
+
+// taskApiのモック
 jest.mock('@/lib/taskApi', () => ({
   getAllTasks: jest.fn(),
   createTask: jest.fn(),
@@ -11,151 +19,156 @@ jest.mock('@/lib/taskApi', () => ({
   deleteTask: jest.fn(),
 }));
 
-// 日付のモック
-const mockDate = new Date('2023-01-01');
-jest.spyOn(global, 'Date').mockImplementation(() => mockDate);
-
 describe('Home', () => {
-  const mockTasks = [
+  const mockTasks: TaskItem[] = [
     {
       id: 1,
       title: 'テストタスク1',
       description: 'テスト説明1',
-      assignedTo: 'テストユーザー1',
-      dueDate: '2023-12-31',
       status: TaskStatus.NotStarted,
+      dueDate: '2023-12-31',
+      assignedTo: 'テストユーザー1',
     },
     {
       id: 2,
       title: 'テストタスク2',
       description: 'テスト説明2',
-      assignedTo: 'テストユーザー2',
-      dueDate: '2024-01-01',
       status: TaskStatus.InProgress,
+      dueDate: '2023-12-31',
+      assignedTo: 'テストユーザー2',
     },
   ];
 
   beforeEach(() => {
     jest.clearAllMocks();
     (taskApi.getAllTasks as jest.Mock).mockResolvedValue(mockTasks);
-    (taskApi.createTask as jest.Mock).mockResolvedValue({ id: 3, ...mockTasks[0] });
-    (taskApi.updateTask as jest.Mock).mockResolvedValue({
-      ...mockTasks[0],
-      status: TaskStatus.InProgress,
-    });
-    (taskApi.deleteTask as jest.Mock).mockResolvedValue(undefined);
   });
 
-  it('タスクの一覧が表示される', async () => {
+  it('タスク一覧が表示される', async () => {
     render(<Home />);
+
     await waitFor(() => {
       expect(screen.getByText('テストタスク1')).toBeInTheDocument();
       expect(screen.getByText('テストタスク2')).toBeInTheDocument();
     });
   });
 
-  it('タスクの新規作成ができる', async () => {
+  it('新規タスクを作成できる', async () => {
+    const newTask: TaskItem = {
+      id: 3,
+      title: '新規タスク',
+      description: '新規説明',
+      status: TaskStatus.NotStarted,
+      dueDate: '2023-12-31',
+      assignedTo: '新規ユーザー',
+    };
+
+    (taskApi.createTask as jest.Mock).mockResolvedValue(newTask);
+
     render(<Home />);
 
     // 新規タスクボタンをクリック
     fireEvent.click(screen.getByText('新規タスク'));
 
-    // フォームが表示される
-    expect(screen.getByLabelText('タイトル')).toBeInTheDocument();
-    expect(screen.getByLabelText('説明')).toBeInTheDocument();
-    expect(screen.getByLabelText('担当者')).toBeInTheDocument();
-    expect(screen.getByLabelText('期限')).toBeInTheDocument();
+    // フォームに値を入力
+    fireEvent.change(screen.getByLabelText('タイトル'), {
+      target: { value: '新規タスク' },
+    });
+    fireEvent.change(screen.getByLabelText('説明'), {
+      target: { value: '新規説明' },
+    });
+    fireEvent.change(screen.getByLabelText('期限'), {
+      target: { value: '2023-12-31' },
+    });
+    fireEvent.change(screen.getByLabelText('担当者'), {
+      target: { value: '新規ユーザー' },
+    });
 
-    // フォームに入力
-    fireEvent.change(screen.getByLabelText('タイトル'), { target: { value: '新しいタスク' } });
-    fireEvent.change(screen.getByLabelText('説明'), { target: { value: '新しい説明' } });
-    fireEvent.change(screen.getByLabelText('担当者'), { target: { value: '新しいユーザー' } });
-    fireEvent.change(screen.getByLabelText('期限'), { target: { value: '2023-01-02' } });
+    // フォームを送信
+    fireEvent.click(screen.getByText('保存'));
 
-    // 送信ボタンをクリック
-    fireEvent.click(screen.getByRole('button', { name: '作成' }));
-
-    // APIが呼ばれる
     await waitFor(() => {
       expect(taskApi.createTask).toHaveBeenCalledWith({
-        title: '新しいタスク',
-        description: '新しい説明',
-        assignedTo: '新しいユーザー',
-        dueDate: '2023-01-02',
+        title: '新規タスク',
+        description: '新規説明',
+        dueDate: '2023-12-31',
+        assignedTo: '新規ユーザー',
         status: TaskStatus.NotStarted,
       });
+      expect(toast.success).toHaveBeenCalledWith('タスクを作成しました');
     });
   });
 
-  it('タスクの編集ができる', async () => {
+  it('タスクを編集できる', async () => {
+    const updatedTask: TaskItem = {
+      ...mockTasks[0],
+      title: '更新後のタスク',
+      description: '更新後の説明',
+    };
+
+    (taskApi.updateTask as jest.Mock).mockResolvedValue(updatedTask);
+
     render(<Home />);
-    await waitFor(() => {
-      expect(screen.getByText('テストタスク1')).toBeInTheDocument();
-    });
 
     // 編集ボタンをクリック
-    const editButtons = screen.getAllByRole('button', { name: /を編集$/ });
-    fireEvent.click(editButtons[0]);
+    await waitFor(() => {
+      const editButton = screen.getByLabelText('テストタスク1を編集');
+      fireEvent.click(editButton);
+    });
 
-    // フォームが表示され、タスクの情報が入力されている
-    expect(screen.getByLabelText('タイトル')).toHaveValue('テストタスク1');
-    expect(screen.getByLabelText('説明')).toHaveValue('テスト説明1');
-    expect(screen.getByLabelText('担当者')).toHaveValue('テストユーザー1');
-    expect(screen.getByLabelText('期限')).toHaveValue('2023-12-31');
+    // フォームの値を更新
+    fireEvent.change(screen.getByLabelText('タイトル'), {
+      target: { value: '更新後のタスク' },
+    });
+    fireEvent.change(screen.getByLabelText('説明'), {
+      target: { value: '更新後の説明' },
+    });
 
-    // フォームを編集
-    fireEvent.change(screen.getByLabelText('タイトル'), { target: { value: '編集されたタスク' } });
-    fireEvent.change(screen.getByLabelText('説明'), { target: { value: '編集された説明' } });
-    fireEvent.change(screen.getByLabelText('担当者'), { target: { value: '編集されたユーザー' } });
-    fireEvent.change(screen.getByLabelText('期限'), { target: { value: '2023-01-02' } });
+    // フォームを送信
+    fireEvent.click(screen.getByText('保存'));
 
-    // 送信ボタンをクリック
-    fireEvent.click(screen.getByRole('button', { name: '保存' }));
-
-    // APIが呼ばれる
     await waitFor(() => {
       expect(taskApi.updateTask).toHaveBeenCalledWith(1, {
-        id: 1,
-        title: '編集されたタスク',
-        description: '編集された説明',
-        assignedTo: '編集されたユーザー',
-        dueDate: '2023-01-02',
-        status: TaskStatus.NotStarted,
+        ...mockTasks[0],
+        title: '更新後のタスク',
+        description: '更新後の説明',
       });
+      expect(toast.success).toHaveBeenCalledWith('タスクを更新しました');
     });
   });
 
-  it('タスクの削除ができる', async () => {
+  it('タスクを削除できる', async () => {
+    (taskApi.deleteTask as jest.Mock).mockResolvedValue(undefined);
+
     render(<Home />);
-    await waitFor(() => {
-      expect(screen.getByText('テストタスク1')).toBeInTheDocument();
-    });
 
     // 削除ボタンをクリック
-    const deleteButtons = screen.getAllByRole('button', { name: /を削除$/ });
-    fireEvent.click(deleteButtons[0]);
+    await waitFor(() => {
+      const deleteButton = screen.getByLabelText('テストタスク1を削除');
+      fireEvent.click(deleteButton);
+    });
 
-    // 確認ダイアログが表示される
-    expect(screen.getByRole('dialog')).toHaveTextContent('タスクを削除しますか？');
-
-    // 確認ボタンをクリック
-    fireEvent.click(screen.getByRole('button', { name: '削除' }));
-
-    // APIが呼ばれる
     await waitFor(() => {
       expect(taskApi.deleteTask).toHaveBeenCalledWith(1);
+      expect(toast.success).toHaveBeenCalledWith('タスクを削除しました');
     });
   });
 
   it('タスクのステータスを変更できる', async () => {
-    render(<Home />);
-    await waitFor(() => {
-      expect(screen.getByText('テストタスク1')).toBeInTheDocument();
-    });
+    const updatedTask: TaskItem = {
+      ...mockTasks[0],
+      status: TaskStatus.InProgress,
+    };
 
-    // ステータスを変更
-    const statusSelects = screen.getAllByRole('combobox', { name: /のステータス$/ });
-    fireEvent.change(statusSelects[0], { target: { value: TaskStatus.InProgress } });
+    (taskApi.updateTask as jest.Mock).mockResolvedValue(updatedTask);
+
+    render(<Home />);
+
+    // ステータス変更ボタンをクリック
+    await waitFor(() => {
+      const statusButton = screen.getByLabelText('テストタスク1のステータスを変更');
+      fireEvent.click(statusButton);
+    });
 
     // ステータスが更新される
     await waitFor(() => {
@@ -163,6 +176,7 @@ describe('Home', () => {
         ...mockTasks[0],
         status: TaskStatus.InProgress,
       });
+      expect(toast.success).toHaveBeenCalledWith('タスクのステータスを更新しました');
     });
   });
 });

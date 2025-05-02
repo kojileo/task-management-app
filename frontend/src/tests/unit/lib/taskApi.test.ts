@@ -57,10 +57,23 @@ describe('taskApi', () => {
   });
 
   it('createTaskが正しく動作する', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    const mockResponse = {
       ok: true,
-      json: () => Promise.resolve(mockTask),
-    });
+      headers: {
+        entries: (): Array<[string, string]> => [],
+        get: (name: string): string | null => null,
+      },
+      text: () => Promise.resolve(JSON.stringify({
+        Id: mockTask.id,
+        Title: mockTask.title,
+        Description: mockTask.description,
+        Status: mockTask.status,
+        DueDate: mockTask.dueDate,
+        AssignedTo: mockTask.assignedTo,
+      })),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse);
 
     const task = await taskApi.createTask(mockTaskFormData);
     expect(task).toEqual(mockTask);
@@ -74,10 +87,19 @@ describe('taskApi', () => {
   });
 
   it('updateTaskが正しく動作する', async () => {
-    (global.fetch as jest.Mock).mockResolvedValueOnce({
+    const mockResponse = {
       ok: true,
-      json: () => Promise.resolve(mockTask),
-    });
+      text: () => Promise.resolve(JSON.stringify({
+        Id: mockTask.id,
+        Title: mockTask.title,
+        Description: mockTask.description,
+        Status: mockTask.status,
+        DueDate: mockTask.dueDate,
+        AssignedTo: mockTask.assignedTo,
+      })),
+    };
+
+    (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse);
 
     const task = await taskApi.updateTask(1, mockTask);
     expect(task).toEqual(mockTask);

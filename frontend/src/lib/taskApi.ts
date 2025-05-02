@@ -65,53 +65,60 @@ export default {
   },
 
   async updateTask(id: number, task: TaskItem): Promise<TaskItem> {
-    const requestBody = {
-      id: task.id,
-      title: task.title,
-      description: task.description,
-      status: task.status,
-      dueDate: new Date(task.dueDate + 'T00:00:00Z').toISOString(),
-      assignedTo: task.assignedTo,
-    };
+    try {
+      const requestBody = {
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        dueDate: new Date(task.dueDate + 'T00:00:00Z').toISOString(),
+        assignedTo: task.assignedTo,
+      };
 
-    const response = await fetch(`${API_BASE_URL}/api/Task/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
+      const response = await fetch(`${API_BASE_URL}/api/Task/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('更新エラー:', error);
-      throw new Error('タスクの更新に失敗しました');
+      if (!response.ok) {
+        throw new Error(`タスクの更新に失敗しました: ${response.statusText}`);
+      }
+
+      const responseText = await response.text();
+      if (!responseText) {
+        throw new Error('タスクの更新に失敗しました：レスポンスが空です');
+      }
+
+      const responseData = JSON.parse(responseText);
+      return {
+        id: responseData.Id,
+        title: responseData.Title,
+        description: responseData.Description,
+        status: responseData.Status,
+        dueDate: responseData.DueDate,
+        assignedTo: responseData.AssignedTo,
+      };
+    } catch (error) {
+      console.error('タスク更新エラー:', error);
+      throw error;
     }
-
-    const responseText = await response.text();
-    if (!responseText) {
-      throw new Error('タスクの更新に失敗しました：レスポンスが空です');
-    }
-
-    const responseData = JSON.parse(responseText);
-    return {
-      id: responseData.Id,
-      title: responseData.Title,
-      description: responseData.Description,
-      status: responseData.Status,
-      dueDate: responseData.DueDate,
-      assignedTo: responseData.AssignedTo,
-    };
   },
 
   async deleteTask(id: number): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/Task/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) {
-      const error = await response.text();
-      console.error('エラーレスポンス:', error);
-      throw new Error(error || 'タスクの削除に失敗しました');
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/Task/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error(`タスクの削除に失敗しました: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('タスク削除エラー:', error);
+      throw error;
     }
   },
 };
