@@ -32,11 +32,13 @@ export default function Home() {
 
   const handleCreateTask = async (formData: TaskFormData) => {
     try {
-      await taskApi.createTask(formData);
+      const createdTask = await taskApi.createTask(formData);
+      console.log('作成されたタスク:', createdTask);
+      setTasks(prevTasks => [...prevTasks, createdTask]);
       toast.success('タスクを作成しました');
       setShowForm(false);
-      fetchTasks();
     } catch (error) {
+      console.error('タスク作成エラー:', error);
       toast.error('タスクの作成に失敗しました');
     }
   };
@@ -44,11 +46,14 @@ export default function Home() {
   const handleUpdateTask = async (formData: TaskFormData) => {
     if (!editingTask) return;
     try {
-      await taskApi.updateTask(editingTask.id, { ...editingTask, ...formData });
+      const updatedTask = await taskApi.updateTask(editingTask.id, { ...editingTask, ...formData });
+      setTasks(prevTasks =>
+        prevTasks.map(task => (task.id === updatedTask.id ? updatedTask : task))
+      );
       toast.success('タスクを更新しました');
       setEditingTask(null);
-      fetchTasks();
     } catch (error) {
+      console.error('タスク更新エラー:', error);
       toast.error('タスクの更新に失敗しました');
     }
   };

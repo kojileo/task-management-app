@@ -21,7 +21,7 @@ const customJestConfig = {
     '!src/app/api/**/*',
     '!**/node_modules/**',
   ],
-  coverageThresholds: {
+  coverageThreshold: {
     global: {
       lines: 50, // ラインカバレッジ目標
       branches: 40, // 分岐カバレッジ目標
