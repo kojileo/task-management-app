@@ -32,7 +32,8 @@ namespace TaskManagement.API.Data
                     .HasMaxLength(100);
                 
                 entity.Property(e => e.Description)
-                    .HasMaxLength(500);
+                    .HasMaxLength(500)
+                    .IsRequired(false);
                 
                 entity.Property(e => e.AssignedTo)
                     .IsRequired()
@@ -44,6 +45,13 @@ namespace TaskManagement.API.Data
                 
                 entity.Property(e => e.UpdatedAt)
                     .HasDefaultValueSql("DATETIME('now')");
+
+                // 必須フィールドのバリデーション
+                entity.Property(e => e.Status)
+                    .IsRequired();
+
+                entity.Property(e => e.DueDate)
+                    .IsRequired();
             });
         }
 
@@ -51,11 +59,43 @@ namespace TaskManagement.API.Data
         {
             var entries = ChangeTracker
                 .Entries()
-                .Where(e => e.Entity is TaskItem && e.State == EntityState.Modified);
+                .Where(e => e.Entity is TaskItem && (e.State == EntityState.Added || e.State == EntityState.Modified));
 
             foreach (var entry in entries)
             {
-                ((TaskItem)entry.Entity).UpdatedAt = DateTime.UtcNow;
+                var task = (TaskItem)entry.Entity;
+
+                // バリデーション
+                if (string.IsNullOrWhiteSpace(task.Title))
+                {
+                    throw new DbUpdateException("Title is required and cannot be empty.");
+                }
+
+                if (string.IsNullOrWhiteSpace(task.AssignedTo))
+                {
+                    throw new DbUpdateException("AssignedTo is required and cannot be empty.");
+                }
+
+                if (task.Title.Length > 100)
+                {
+                    throw new DbUpdateException("Title cannot exceed 100 characters.");
+                }
+
+                if (task.AssignedTo.Length > 50)
+                {
+                    throw new DbUpdateException("AssignedTo cannot exceed 50 characters.");
+                }
+
+                if (task.Description?.Length > 500)
+                {
+                    throw new DbUpdateException("Description cannot exceed 500 characters.");
+                }
+
+                // 更新日時の設定
+                if (entry.State == EntityState.Modified)
+                {
+                    task.UpdatedAt = DateTime.UtcNow;
+                }
             }
 
             return base.SaveChangesAsync(cancellationToken);
