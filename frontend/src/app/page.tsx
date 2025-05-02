@@ -74,12 +74,9 @@ export default function Home() {
       const task = tasks.find(t => t.id === taskId);
       if (task) {
         const updatedTask = await taskApi.updateTask(taskId, {
-          id: taskId,
-          title: task.title,
-          description: task.description,
-          assignedTo: task.assignedTo,
-          dueDate: task.dueDate,
+          ...task,
           status: newStatus,
+          dueDate: new Date(task.dueDate).toISOString(),
         });
         setTasks(prevTasks =>
           prevTasks.map(t => (t.id === taskId ? updatedTask : t))
@@ -87,6 +84,7 @@ export default function Home() {
         toast.success('タスクのステータスを更新しました');
       }
     } catch (error) {
+      console.error('タスクステータス更新エラー:', error);
       toast.error('タスクのステータス更新に失敗しました');
     }
   };

@@ -1,6 +1,6 @@
 import { TaskItem, TaskFormData } from '@/types/task';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default {
   async getAllTasks(): Promise<TaskItem[]> {
@@ -73,7 +73,7 @@ export default {
         title: task.title,
         description: task.description,
         status: task.status,
-        dueDate: new Date(task.dueDate + 'T00:00:00Z').toISOString(),
+        dueDate: task.dueDate,
         assignedTo: task.assignedTo,
       };
 

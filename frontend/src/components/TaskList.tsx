@@ -1,10 +1,6 @@
 'use client';
 
-import { DndContext, DragEndEvent, closestCorners } from '@dnd-kit/core';
-import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
-
 import { TaskItem, TaskStatus } from '@/types/task';
 
 interface TaskListProps {
@@ -12,7 +8,7 @@ interface TaskListProps {
   loading: boolean;
   onEdit: (task: TaskItem) => void;
   onDelete: (id: number) => void;
-  onStatusChange: (taskId: number, newStatus: TaskStatus) => void;
+  onStatusChange: (id: number, status: TaskStatus) => void;
 }
 
 const statusColors = {
@@ -36,15 +32,8 @@ function TaskCard({
   task: TaskItem;
   onEdit: (task: TaskItem) => void;
   onDelete: (id: number) => void;
-  onStatusChange: (taskId: number, newStatus: TaskStatus) => void;
+  onStatusChange: (id: number, status: TaskStatus) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: task.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -57,15 +46,16 @@ function TaskCard({
     onEdit(task);
   };
 
+  const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onStatusChange(task.id, e.target.value as TaskStatus);
+  };
+
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-4 mb-3"
-    >
+    <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-4 mb-3">
       <div className="flex justify-between items-start">
-        <div {...listeners} className="cursor-move flex-grow">
+        <div className="flex-grow">
           <h3 className="text-lg font-semibold text-gray-900">{task.title}</h3>
           <p className="text-gray-600 text-sm mt-2">{task.description}</p>
           <div className="flex items-center justify-between mt-4">
@@ -76,6 +66,18 @@ function TaskCard({
           </div>
         </div>
         <div className="flex space-x-2">
+          <select
+            value={task.status}
+            onChange={handleStatusChange}
+            className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[task.status]} border-0 focus:ring-0`}
+            data-testid={`status-select-${task.id}`}
+          >
+            {Object.entries(statusLabels).map(([value, label]) => (
+              <option key={value} value={value} className={statusColors[value as TaskStatus]}>
+                {label}
+              </option>
+            ))}
+          </select>
           <button
             onClick={handleEdit}
             className="p-1 text-gray-500 hover:text-blue-500 transition-colors"
@@ -105,18 +107,6 @@ export default function TaskList({
   onDelete,
   onStatusChange,
 }: TaskListProps) {
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const taskId = active.id as number;
-      const newStatus = over.id as TaskStatus;
-      const task = tasks.find(t => t.id === taskId);
-      if (task) {
-        onStatusChange(taskId, newStatus);
-      }
-    }
-  };
-
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -144,37 +134,30 @@ export default function TaskList({
   }
 
   return (
-    <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {Object.values(TaskStatus).map(status => (
-          <div key={status} className="bg-gray-50 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900">{statusLabels[status]}</h2>
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[status]}`}
-              >
-                {tasks.filter(t => t.status === status).length}
-              </span>
-            </div>
-            <SortableContext
-              items={tasks.filter(t => t.status === status).map(t => t.id)}
-              strategy={verticalListSortingStrategy}
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {Object.values(TaskStatus).map(status => (
+        <div key={status} className="bg-gray-50 rounded-lg p-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">{statusLabels[status]}</h2>
+            <span
+              className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[status]}`}
             >
-              {tasks
-                .filter(t => t.status === status)
-                .map(task => (
-                  <TaskCard 
-                    key={`${task.id}-${task.status}`}
-                    task={task} 
-                    onEdit={onEdit} 
-                    onDelete={onDelete} 
-                    onStatusChange={onStatusChange}
-                  />
-                ))}
-            </SortableContext>
+              {tasks.filter(t => t.status === status).length}
+            </span>
           </div>
-        ))}
-      </div>
-    </DndContext>
+          {tasks
+            .filter(t => t.status === status)
+            .map(task => (
+              <TaskCard 
+                key={`${task.id}-${task.status}`}
+                task={task} 
+                onEdit={onEdit} 
+                onDelete={onDelete}
+                onStatusChange={onStatusChange}
+              />
+            ))}
+        </div>
+      ))}
+    </div>
   );
 }
