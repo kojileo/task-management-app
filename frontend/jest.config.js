@@ -33,6 +33,12 @@ const customJestConfig = {
     '<rootDir>/src/**/*.test.{js,jsx,ts,tsx}',
     '<rootDir>/src/**/*.spec.{js,jsx,ts,tsx}',
   ],
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/tests/',
+    '/.next/',
+    '/coverage/'
+  ],
 };
 
 // createJestConfigは、Next.jsの設定を組み込んだJestの設定を生成します
