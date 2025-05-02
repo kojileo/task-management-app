@@ -196,9 +196,12 @@ describe('Home', () => {
       });
     });
 
-    await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('タスクの作成に失敗しました');
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(toast.error).toHaveBeenCalledWith('タスクの作成に失敗しました');
+      },
+      { timeout: 3000 }
+    );
   });
 
   it('タスクの編集が成功する', async () => {
@@ -267,4 +270,4 @@ describe('Home', () => {
       expect(screen.queryByText(mockTasks[0].title)).not.toBeInTheDocument();
     });
   });
-}); 
+});

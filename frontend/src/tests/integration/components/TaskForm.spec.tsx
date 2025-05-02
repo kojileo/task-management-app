@@ -33,12 +33,7 @@ describe('TaskForm Integration Tests', () => {
 
   it('新規タスク作成フォームが正しく表示される', async () => {
     await act(async () => {
-      render(
-        <TaskForm
-          onSubmit={mockHandlers.onSubmit}
-          onCancel={mockHandlers.onCancel}
-        />
-      );
+      render(<TaskForm onSubmit={mockHandlers.onSubmit} onCancel={mockHandlers.onCancel} />);
     });
 
     expect(screen.getByLabelText('タイトル')).toBeInTheDocument();
@@ -68,12 +63,7 @@ describe('TaskForm Integration Tests', () => {
 
   it('フォームの送信が正しく動作する', async () => {
     await act(async () => {
-      render(
-        <TaskForm
-          onSubmit={mockHandlers.onSubmit}
-          onCancel={mockHandlers.onCancel}
-        />
-      );
+      render(<TaskForm onSubmit={mockHandlers.onSubmit} onCancel={mockHandlers.onCancel} />);
     });
 
     await act(async () => {
@@ -110,12 +100,7 @@ describe('TaskForm Integration Tests', () => {
 
   it('キャンセルボタンが正しく動作する', async () => {
     await act(async () => {
-      render(
-        <TaskForm
-          onSubmit={mockHandlers.onSubmit}
-          onCancel={mockHandlers.onCancel}
-        />
-      );
+      render(<TaskForm onSubmit={mockHandlers.onSubmit} onCancel={mockHandlers.onCancel} />);
     });
 
     const cancelButton = screen.getByText('キャンセル');
@@ -128,12 +113,7 @@ describe('TaskForm Integration Tests', () => {
 
   it('バリデーションエラーが正しく表示される', async () => {
     await act(async () => {
-      render(
-        <TaskForm
-          onSubmit={mockHandlers.onSubmit}
-          onCancel={mockHandlers.onCancel}
-        />
-      );
+      render(<TaskForm onSubmit={mockHandlers.onSubmit} onCancel={mockHandlers.onCancel} />);
     });
 
     const form = screen.getByTestId('task-form');
@@ -144,4 +124,4 @@ describe('TaskForm Integration Tests', () => {
     expect(toast.error).toHaveBeenCalled();
     expect(mockHandlers.onSubmit).not.toHaveBeenCalled();
   });
-}); 
+});

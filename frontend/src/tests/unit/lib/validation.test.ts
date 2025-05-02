@@ -54,4 +54,4 @@ describe('validateTaskForm', () => {
     expect(result.isValid).toBe(false);
     expect(result.errors.assignedTo).toBe('担当者は必須です');
   });
-}); 
+});

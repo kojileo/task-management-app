@@ -263,4 +263,4 @@ describe('Home Integration Tests', () => {
       expect(toast.error).toHaveBeenCalledWith(errorMessage);
     });
   });
-}); 
+});

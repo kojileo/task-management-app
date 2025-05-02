@@ -92,7 +92,7 @@ describe('taskApi', () => {
         ok: true,
         text: () => Promise.resolve(''),
         headers: {
-          get: (name: string) => name === 'location' ? '/api/Task/1' : null,
+          get: (name: string) => (name === 'location' ? '/api/Task/1' : null),
         },
       })
       .mockResolvedValueOnce({

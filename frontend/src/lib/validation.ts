@@ -34,4 +34,4 @@ export function validateTaskForm(data: TaskFormData): ValidationResult {
     isValid: Object.keys(errors).length === 0,
     errors,
   };
-} 
+}

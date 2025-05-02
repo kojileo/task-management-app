@@ -118,7 +118,7 @@ describe('taskApi Integration Tests', () => {
           ok: true,
           text: async () => '',
           headers: {
-            get: (name: string) => name === 'location' ? '/api/Task/1' : null,
+            get: (name: string) => (name === 'location' ? '/api/Task/1' : null),
           },
         })
         .mockResolvedValueOnce({
@@ -191,4 +191,4 @@ describe('taskApi Integration Tests', () => {
       await expect(taskApi.deleteTask(999)).rejects.toThrow('タスクの削除に失敗しました');
     });
   });
-}); 
+});

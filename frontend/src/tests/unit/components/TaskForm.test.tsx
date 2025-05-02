@@ -36,11 +36,7 @@ describe('TaskForm', () => {
 
   it('フォームが正しくレンダリングされる', () => {
     render(
-      <TaskForm
-        task={mockTask}
-        onSubmit={mockHandlers.onSubmit}
-        onCancel={mockHandlers.onCancel}
-      />
+      <TaskForm task={mockTask} onSubmit={mockHandlers.onSubmit} onCancel={mockHandlers.onCancel} />
     );
 
     expect(screen.getByLabelText('タイトル')).toHaveValue(mockTask.title);
@@ -52,11 +48,7 @@ describe('TaskForm', () => {
 
   it('フォームの送信が正しく処理される', async () => {
     render(
-      <TaskForm
-        task={mockTask}
-        onSubmit={mockHandlers.onSubmit}
-        onCancel={mockHandlers.onCancel}
-      />
+      <TaskForm task={mockTask} onSubmit={mockHandlers.onSubmit} onCancel={mockHandlers.onCancel} />
     );
 
     // フォームを送信
@@ -70,11 +62,7 @@ describe('TaskForm', () => {
 
   it('キャンセルボタンが正しく動作する', () => {
     render(
-      <TaskForm
-        task={mockTask}
-        onSubmit={mockHandlers.onSubmit}
-        onCancel={mockHandlers.onCancel}
-      />
+      <TaskForm task={mockTask} onSubmit={mockHandlers.onSubmit} onCancel={mockHandlers.onCancel} />
     );
 
     // キャンセルボタンをクリック
@@ -83,4 +71,4 @@ describe('TaskForm', () => {
     // onCancelが呼び出されることを確認
     expect(mockHandlers.onCancel).toHaveBeenCalled();
   });
-}); 
+});

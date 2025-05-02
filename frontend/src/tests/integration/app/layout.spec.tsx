@@ -20,4 +20,4 @@ describe('RootLayout Integration Tests', () => {
     expect(document.querySelector('html')).toHaveAttribute('lang', 'ja');
     expect(document.querySelector('body')).toHaveClass('mock-inter-font');
   });
-}); 
+});

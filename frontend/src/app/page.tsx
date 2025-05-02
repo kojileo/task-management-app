@@ -78,9 +78,7 @@ export default function Home() {
           status: newStatus,
           dueDate: new Date(task.dueDate).toISOString(),
         });
-        setTasks(prevTasks =>
-          prevTasks.map(t => (t.id === taskId ? updatedTask : t))
-        );
+        setTasks(prevTasks => prevTasks.map(t => (t.id === taskId ? updatedTask : t)));
         toast.success('タスクのステータスを更新しました');
       }
     } catch (error) {
@@ -92,7 +90,9 @@ export default function Home() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <p className="text-gray-500" data-testid="loading-message">タスクを読み込み中...</p>
+        <p className="text-gray-500" data-testid="loading-message">
+          タスクを読み込み中...
+        </p>
       </div>
     );
   }

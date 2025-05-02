@@ -19,6 +19,10 @@ module.exports = {
     "sonarjs",
     "security"
   ],
+  env: {
+    jest: true,
+    node: true
+  },
   settings: {
     react: {
       version: "detect"

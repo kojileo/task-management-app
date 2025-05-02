@@ -30,7 +30,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     const validationResult = validateTaskForm(formData);
     if (!validationResult.isValid) {
       toast.error(validationResult.errors.title || '');
@@ -58,7 +58,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           id="title"
           required
           value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          onChange={e => setFormData({ ...formData, title: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
@@ -71,7 +71,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           id="description"
           rows={4}
           value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          onChange={e => setFormData({ ...formData, description: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
@@ -83,7 +83,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
         <select
           id="status"
           value={formData.status}
-          onChange={(e) => setFormData({ ...formData, status: e.target.value as TaskStatus })}
+          onChange={e => setFormData({ ...formData, status: e.target.value as TaskStatus })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         >
           {Object.entries(statusLabels).map(([value, label]) => (
@@ -102,7 +102,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           type="date"
           id="dueDate"
           value={formData.dueDate}
-          onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+          onChange={e => setFormData({ ...formData, dueDate: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>
@@ -115,7 +115,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
           type="text"
           id="assignedTo"
           value={formData.assignedTo}
-          onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+          onChange={e => setFormData({ ...formData, assignedTo: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
       </div>

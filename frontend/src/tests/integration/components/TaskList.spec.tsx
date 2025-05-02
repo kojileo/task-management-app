@@ -197,4 +197,4 @@ describe('TaskList Integration Tests', () => {
       fireEvent.dragEnd(taskElement!);
     });
   });
-}); 
+});
