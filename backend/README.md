@@ -59,7 +59,7 @@ cd backend
 powershell -File "ci/run-backend-unittest.ps1"
 ```
 
-### 統合テスト実行（ライン60%、分岐50%の目標）
+### インテグレーションテスト実行（ライン60%、分岐50%の目標）
 ```powershell
 cd backend
 powershell -File "ci/run-backend-integrationtest.ps1"

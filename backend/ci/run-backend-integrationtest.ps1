@@ -1,75 +1,113 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 
 $ErrorActionPreference = "Stop"
-Write-Host "バックエンド統合テスト実行とカバレッジ検証" -ForegroundColor Cyan
+Write-Host "Backend Integration Test Execution and Coverage Verification" -ForegroundColor Cyan
 
-# プロジェクトディレクトリに移動
-$testDir = Join-Path $PSScriptRoot "..\..\backend\TaskManagement.Tests"
+# Move to project directory
+$testDir = Join-Path $PSScriptRoot "..\TaskManagement.Tests"
 Set-Location $testDir
 
-# テスト実行とカバレッジ測定
-Write-Host "統合テスト実行中..." -ForegroundColor Yellow
+# Run tests and measure coverage
+Write-Host "Running integration tests..." -ForegroundColor Yellow
 dotnet test --filter "FullyQualifiedName~IntegrationTests" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput="./TestResults/integrationtest-coverage.cobertura.xml" /p:Include="[TaskManagement.API]*" /p:ExcludeByAttribute="Obsolete%2cGeneratedCodeAttribute%2cCompilerGeneratedAttribute"
 
-# カバレッジレポートのパス
+# Coverage report path
 $reportPath = Join-Path $testDir "TestResults\integrationtest-coverage.cobertura.xml"
 
-# レポートが存在するか確認
+# Check if report exists
 if (-not (Test-Path $reportPath)) {
-    Write-Host "エラー: カバレッジレポートが生成されませんでした" -ForegroundColor Red
-    # 統合テストがスキップまたは未実装の場合は警告として扱う
-    Write-Host "警告: 統合テストがスキップまたは未実装の可能性があります" -ForegroundColor Yellow
+    Write-Host "Error: Coverage report was not generated" -ForegroundColor Red
+    # Treat as warning if integration tests are skipped or not implemented
+    Write-Host "Warning: Integration tests may be skipped or not implemented" -ForegroundColor Yellow
     exit 0
 }
 
-# カバレッジ情報を読み込む
+# Load coverage information
 [xml]$coverage = Get-Content $reportPath
-$lineRate = [math]::Round($coverage.coverage.'line-rate' * 100, 2)
-$branchRate = [math]::Round($coverage.coverage.'branch-rate' * 100, 2)
-$methodRate = [math]::Round($coverage.coverage.'method-rate' * 100, 2)
 
-# 目標値
+# Target values
 $lineTarget = 60
 $branchTarget = 50
 
-# HTMLレポート生成
+# Read coverage values from the report
+$lineRateStr = $coverage.coverage.'line-rate'
+if ($lineRateStr -ne $null) {
+    $lineRate = [Math]::Round([double]$lineRateStr * 100, 2)
+} else {
+    $lineRate = 0
+}
+
+$branchRateStr = $coverage.coverage.'branch-rate'
+if ($branchRateStr -ne $null) {
+    $branchRate = [Math]::Round([double]$branchRateStr * 100, 2)
+} else {
+    $branchRate = 0
+}
+
+$methodRateStr = $coverage.coverage.'method-rate'
+if ($methodRateStr -ne $null) {
+    $methodRate = [Math]::Round([double]$methodRateStr * 100, 2)
+} else {
+    # Method rate might not be in the report
+    $methodRate = 0
+}
+
+# Create HTML report directory if it doesn't exist
 $reportDir = Join-Path $testDir "TestResults\HtmlReport\IntegrationTest"
-dotnet reportgenerator -reports:$reportPath -targetdir:$reportDir -reporttypes:Html
+if (-not (Test-Path $reportDir)) {
+    New-Item -ItemType Directory -Path $reportDir -Force | Out-Null
+}
 
-# カバレッジ結果表示
-Write-Host "`n統合テストカバレッジ結果:" -ForegroundColor Cyan
-Write-Host "ライン カバレッジ: $lineRate% (目標: $lineTarget%)"
-Write-Host "分岐 カバレッジ: $branchRate% (目標: $branchTarget%)"
-Write-Host "メソッド カバレッジ: $methodRate%"
+# Generate HTML report
+Write-Host "Generating HTML report..." -ForegroundColor Yellow
+try {
+    $reportGeneratorCmd = "reportgenerator -reports:`"$reportPath`" -targetdir:`"$reportDir`" -reporttypes:Html"
+    Invoke-Expression $reportGeneratorCmd
+    $htmlReportGenerated = $true
+} catch {
+    Write-Host "Warning: HTML report generation failed. $($_.Exception.Message)" -ForegroundColor Yellow
+    $htmlReportGenerated = $false
+}
 
-# 結果が目標を達成しているか確認
+# Display coverage results
+Write-Host "`nIntegration Test Coverage Results:" -ForegroundColor Cyan
+Write-Host "Line Coverage: $lineRate% (Target: $lineTarget%)"
+Write-Host "Branch Coverage: $branchRate% (Target: $branchTarget%)"
+if ($methodRate -gt 0) {
+    Write-Host "Method Coverage: $methodRate%"
+}
+
+# Check if results meet targets
 $success = $true
 
 if ($lineRate -lt $lineTarget) {
-    Write-Host "警告: ラインカバレッジが目標に達していません（$lineRate% < $lineTarget%）" -ForegroundColor Yellow
+    Write-Host "Warning: Line coverage does not meet target ($lineRate% is below $lineTarget%)" -ForegroundColor Yellow
     $success = $false
 }
 else {
-    Write-Host "成功: ラインカバレッジが目標を達成しています（$lineRate% >= $lineTarget%）" -ForegroundColor Green
+    Write-Host "Success: Line coverage meets target ($lineRate% is at or above $lineTarget%)" -ForegroundColor Green
 }
 
 if ($branchRate -lt $branchTarget) {
-    Write-Host "警告: 分岐カバレッジが目標に達していません（$branchRate% < $branchTarget%）" -ForegroundColor Yellow
+    Write-Host "Warning: Branch coverage does not meet target ($branchRate% is below $branchTarget%)" -ForegroundColor Yellow
     $success = $false
 }
 else {
-    Write-Host "成功: 分岐カバレッジが目標を達成しています（$branchRate% >= $branchTarget%）" -ForegroundColor Green
+    Write-Host "Success: Branch coverage meets target ($branchRate% is at or above $branchTarget%)" -ForegroundColor Green
 }
 
-# HTMLレポートの場所を表示
-Write-Host "`nHTML詳細レポート: $reportDir\index.html" -ForegroundColor Cyan
+# Display report locations
+Write-Host "`nXML Coverage Report: $reportPath" -ForegroundColor Cyan
+if ($htmlReportGenerated) {
+    Write-Host "HTML Coverage Report: $reportDir\index.html" -ForegroundColor Cyan
+}
 
 if (-not $success) {
-    Write-Host "`n警告: 統合テストのカバレッジ目標が達成されていません。改善が必要です。" -ForegroundColor Yellow
-    # 統合テストはまだ開発中のため、失敗しても全体のビルドは失敗させない
+    Write-Host "`nWarning: Integration test coverage targets have not been met. Improvement is needed." -ForegroundColor Yellow
+    # Do not fail the build for integration tests as they are still in development
     exit 0
 }
 else {
-    Write-Host "`n成功: すべての統合テストカバレッジ目標が達成されています！" -ForegroundColor Green
+    Write-Host "`nSuccess: All integration test coverage targets have been met!" -ForegroundColor Green
     exit 0
-}
+} 

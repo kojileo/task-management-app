@@ -9,7 +9,7 @@ Set-Location $testDir
 
 # Execute test and measure coverage
 Write-Host "Running unit tests..." -ForegroundColor Yellow
-dotnet test --filter "FullyQualifiedName~UnitTests" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput="./TestResults/unittest-coverage.cobertura.xml" /p:Include="[TaskManagement.API]*" /p:ExcludeByAttribute="Obsolete%2cGeneratedCodeAttribute%2cCompilerGeneratedAttribute"
+dotnet test --filter "FullyQualifiedName~UnitTests" /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput="./TestResults/unittest-coverage.cobertura.xml" /p:Include="[TaskManagement.API]*" /p:Exclude="[TaskManagement.API]Program" /p:ExcludeByAttribute="Obsolete%2cGeneratedCodeAttribute%2cCompilerGeneratedAttribute"
 
 # Coverage report path
 $reportPath = Join-Path $testDir "TestResults\unittest-coverage.cobertura.xml"

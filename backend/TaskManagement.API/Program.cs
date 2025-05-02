@@ -112,3 +112,9 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// Make Program class public for integration tests
+public partial class Program 
+{ 
+    // This class is intentionally left empty and is used only for integration tests
+}
