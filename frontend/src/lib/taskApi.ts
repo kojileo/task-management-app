@@ -1,89 +1,126 @@
 import { TaskItem, TaskFormData } from '@/types/task';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5045';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default {
-    async getAllTasks(): Promise<TaskItem[]> {
-        const response = await fetch(`${API_BASE_URL}/api/Task`);
-        if (!response.ok) {
-            throw new Error('タスクの取得に失敗しました');
+  async getAllTasks(): Promise<TaskItem[]> {
+    const response = await fetch(`${API_BASE_URL}/api/Task`);
+    if (!response.ok) {
+      throw new Error('タスクの取得に失敗しました');
+    }
+    return response.json();
+  },
+
+  async getTaskById(id: number): Promise<TaskItem> {
+    const response = await fetch(`${API_BASE_URL}/api/Task/${id}`);
+    if (!response.ok) {
+      throw new Error('タスクの取得に失敗しました');
+    }
+    return response.json();
+  },
+
+  async createTask(task: TaskFormData): Promise<TaskItem> {
+    try {
+      const requestBody = {
+        title: task.title,
+        description: task.description,
+        status: task.status || 'InProgress',
+        dueDate: new Date(task.dueDate + 'T00:00:00Z').toISOString(),
+        assignedTo: task.assignedTo,
+      };
+
+      const response = await fetch(`${API_BASE_URL}/api/Task`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error('タスクの作成に失敗しました');
+      }
+
+      const responseText = await response.text();
+      if (!responseText) {
+        const location = response.headers.get('location');
+        if (location) {
+          const taskId = location.split('/').pop();
+          return this.getTaskById(Number(taskId));
         }
-        return response.json();
-    },
+        throw new Error('タスクの作成に失敗しました：レスポンスが空です');
+      }
 
-    async getTaskById(id: number): Promise<TaskItem> {
-        const response = await fetch(`${API_BASE_URL}/api/Task/${id}`);
-        if (!response.ok) {
-            throw new Error('タスクの取得に失敗しました');
-        }
-        return response.json();
-    },
+      const responseData = JSON.parse(responseText);
+      return {
+        id: responseData.Id,
+        title: responseData.Title,
+        description: responseData.Description,
+        status: responseData.Status,
+        dueDate: responseData.DueDate,
+        assignedTo: responseData.AssignedTo,
+      };
+    } catch (error) {
+      console.error('タスク作成エラー:', error);
+      throw new Error('タスクの作成に失敗しました');
+    }
+  },
 
-    async createTask(task: TaskFormData): Promise<TaskItem> {
-        const requestBody = {
-            title: task.title,
-            description: task.description,
-            status: task.status,
-            dueDate: new Date(task.dueDate + 'T00:00:00Z').toISOString(),
-            assignedTo: task.assignedTo
-        };
+  async updateTask(id: number, task: TaskItem): Promise<TaskItem> {
+    try {
+      const requestBody = {
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        dueDate: task.dueDate,
+        assignedTo: task.assignedTo,
+      };
 
-        console.log('リクエストボディ:', requestBody);
+      const response = await fetch(`${API_BASE_URL}/api/Task/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-        const response = await fetch(`${API_BASE_URL}/api/Task`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-        });
+      if (!response.ok) {
+        throw new Error(`タスクの更新に失敗しました: ${response.statusText}`);
+      }
 
-        if (!response.ok) {
-            const error = await response.text();
-            console.error('エラーレスポンス:', error);
-            throw new Error(error || 'タスクの作成に失敗しました');
-        }
+      const responseText = await response.text();
+      if (!responseText) {
+        throw new Error('タスクの更新に失敗しました：レスポンスが空です');
+      }
 
-        return response.json();
-    },
+      const responseData = JSON.parse(responseText);
+      return {
+        id: responseData.Id,
+        title: responseData.Title,
+        description: responseData.Description,
+        status: responseData.Status,
+        dueDate: responseData.DueDate,
+        assignedTo: responseData.AssignedTo,
+      };
+    } catch (error) {
+      console.error('タスク更新エラー:', error);
+      throw error;
+    }
+  },
 
-    async updateTask(id: number, task: TaskItem): Promise<TaskItem> {
-        const requestBody = {
-            id: task.id,
-            title: task.title,
-            description: task.description,
-            status: task.status,
-            dueDate: new Date(task.dueDate + 'T00:00:00Z').toISOString(),
-            assignedTo: task.assignedTo
-        };
+  async deleteTask(id: number): Promise<void> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/Task/${id}`, {
+        method: 'DELETE',
+      });
 
-        console.log('リクエストボディ:', requestBody);
-
-        const response = await fetch(`${API_BASE_URL}/api/Task/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(requestBody),
-        });
-
-        if (!response.ok) {
-            const error = await response.text();
-            console.error('エラーレスポンス:', error);
-            throw new Error(error || 'タスクの更新に失敗しました');
-        }
-
-        return response.json();
-    },
-
-    async deleteTask(id: number): Promise<void> {
-        const response = await fetch(`${API_BASE_URL}/api/Task/${id}`, {
-            method: 'DELETE',
-        });
-        if (!response.ok) {
-            const error = await response.text();
-            console.error('エラーレスポンス:', error);
-            throw new Error(error || 'タスクの削除に失敗しました');
-        }
-    },
-}; 
+      if (!response.ok) {
+        throw new Error(`タスクの削除に失敗しました: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('タスク削除エラー:', error);
+      throw error;
+    }
+  },
+};

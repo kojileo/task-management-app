@@ -1,16 +1,24 @@
 export enum TaskStatus {
-    NotStarted = 'NotStarted',
-    InProgress = 'InProgress',
-    Completed = 'Completed'
+  NotStarted = 'NotStarted',
+  InProgress = 'InProgress',
+  Completed = 'Completed',
 }
 
 export interface TaskItem {
-    id: number;
-    title: string;
-    description: string;
-    status: TaskStatus;
-    dueDate: string;
-    assignedTo: string;
+  id: number;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  dueDate: string;
+  assignedTo: string;
 }
 
-export type TaskFormData = Omit<TaskItem, 'id'>; 
+// フォームデータ用の型定義 - dueDateは必須
+export interface TaskFormData {
+  id?: number;
+  title: string;
+  description: string;
+  status: TaskStatus;
+  dueDate: string;
+  assignedTo: string;
+}

@@ -11,8 +11,8 @@ Next.jsを使用したタスク管理アプリケーションのフロントエ�
 
 ## 技術スタック
 
-- Next.js 14
-- React 18
+- Next.js 15
+- React 19
 - TypeScript
 - Tailwind CSS
 - Axios
@@ -46,43 +46,72 @@ npm run start
 
 ## テスト
 
+### 基本的なテスト実行
 ```bash
 npm run test
 ```
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
+### ウォッチモードでテスト実行
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run test:watch
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### カバレッジレポート付きでテスト実行
+```bash
+npm run test:coverage
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### ユニットテスト実行（ライン50%、分岐40%の目標）
+```powershell
+powershell -File "ci/run-frontend-unittest.ps1"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### インテグレーションテスト実行（ライン80%、分岐70%の目標）
+```powershell
+powershell -File "ci/run-frontend-integrationtest.ps1"
+```
 
-## Learn More
+### すべてのテストを一度に実行
+```powershell
+powershell -File "ci/run-frontend-test.ps1"
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 静的解析
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+プロジェクトの品質を保つため、以下の静的解析ツールを導入しています。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### TypeScript型チェック
 
-## Deploy on Vercel
+```bash
+npm run type-check
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### ESLintによるコード品質チェック
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run lint
+```
+
+コードの問題を自動的に修正する場合:
+
+```bash
+npm run lint:fix
+```
+
+### Prettierによるコードフォーマット
+
+```bash
+npm run format
+```
+
+### セキュリティスキャン
+
+```bash
+npm run security-scan
+```
+
+### 全ての静的解析を一度に実行
+
+```powershell
+powershell -File "ci/run-frontend-static.ps1"
+```
