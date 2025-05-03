@@ -24,7 +24,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
     title: task?.title || '',
     description: task?.description || '',
     status: task?.status || TaskStatus.NotStarted,
-    dueDate: task?.dueDate || '',
+    dueDate: task?.dueDate || currentDate,
     assignedTo: task?.assignedTo || '',
   });
 
