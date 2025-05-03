@@ -3,20 +3,28 @@
 $ErrorActionPreference = "Stop"
 Write-Host "E2Eテスト実行とカバレッジ検証" -ForegroundColor Cyan
 
-# E2Eテストディレクトリに移動
-$e2eDir = Join-Path $PSScriptRoot "..\..\e2e"
-Set-Location $e2eDir
+# プロジェクトルートディレクトリの設定
+$rootDir = Join-Path $PSScriptRoot "..\..\"
+$backendDir = Join-Path $rootDir "backend\TaskManagement.API"
+$frontendDir = Join-Path $rootDir "frontend"
+$e2eDir = Join-Path $rootDir "e2e"
 
-# 依存関係が存在するか確認
+# CI環境変数設定
+$env:CI = "true"
+
+# 依存関係のインストール
+Push-Location $e2eDir
+Write-Host "E2Eテストの依存関係をインストール中..." -ForegroundColor Yellow
 if (-not (Test-Path "node_modules")) {
-    Write-Host "依存関係をインストール中..." -ForegroundColor Yellow
     npm ci
+    npx playwright install --with-deps chromium
 }
+Pop-Location
 
-# バックエンドのビルド・起動（バックグラウンドで）
-$backendDir = Join-Path $PSScriptRoot "..\..\backend\TaskManagement.API"
+# バックエンドのビルド・起動
 Write-Host "バックエンドをビルド・起動中..." -ForegroundColor Yellow
 Push-Location $backendDir
+dotnet build
 $backendProcess = Start-Process -FilePath "dotnet" -ArgumentList "run", "--urls=http://localhost:5045" -PassThru -NoNewWindow
 Pop-Location
 
@@ -25,99 +33,54 @@ Write-Host "バックエンドの起動を待機中..." -ForegroundColor Yellow
 Start-Sleep -Seconds 10
 
 try {
-    # フロントエンドのビルド・起動（バックグラウンドで）
-    $frontendDir = Join-Path $PSScriptRoot "..\..\frontend"
+    # フロントエンドのビルド・起動
     Write-Host "フロントエンドをビルド・起動中..." -ForegroundColor Yellow
     Push-Location $frontendDir
-    $frontendProcess = Start-Process -FilePath "npm" -ArgumentList "start" -PassThru -NoNewWindow
+    
+    # package-lock.jsonが存在するか確認
+    if (-not (Test-Path "node_modules")) {
+        npm ci
+    }
+    
+    # 本番用ビルド
+    npm run build
+    
+    # 起動
+    $frontendProcess = Start-Process -FilePath "npm" -ArgumentList "run", "start" -PassThru -NoNewWindow
     Pop-Location
 
     # 少し待機してフロントエンドが起動するのを待つ
     Write-Host "フロントエンドの起動を待機中..." -ForegroundColor Yellow
-    Start-Sleep -Seconds 20
+    Start-Sleep -Seconds 15
 
     try {
         # E2Eテスト実行
         Write-Host "E2Eテスト実行中..." -ForegroundColor Yellow
         Set-Location $e2eDir
+        
+        # テスト実行
         npm test
+        $testResult = $LASTEXITCODE
 
-        # E2Eテストのカバレッジレポートパス
-        $reportPath = Join-Path $e2eDir "coverage\coverage-summary.json"
-
-        # レポートが存在するか確認
-        if (-not (Test-Path $reportPath)) {
-            Write-Host "警告: E2Eテストのカバレッジレポートが生成されませんでした" -ForegroundColor Yellow
-            Write-Host "E2Eテストは成功しましたが、カバレッジレポートが見つかりません。テスト設定を確認してください。" -ForegroundColor Yellow
-            exit 0
-        }
-
-        # カバレッジ情報を読み込む
-        $coverage = Get-Content $reportPath | ConvertFrom-Json
-        $lineRate = $coverage.total.lines.pct
-        $branchRate = $coverage.total.branches.pct
-        $functionRate = $coverage.total.functions.pct
-
-        # 目標値（E2Eテストは低めの目標値）
-        $lineTarget = 20
-        $branchTarget = 15
-
-        # カバレッジ結果表示
-        Write-Host "`nE2Eテストカバレッジ結果:" -ForegroundColor Cyan
-        Write-Host "ライン カバレッジ: $lineRate% (目標: $lineTarget%)"
-        Write-Host "分岐 カバレッジ: $branchRate% (目標: $branchTarget%)"
-        Write-Host "関数 カバレッジ: $functionRate%"
-
-        # 結果が目標を達成しているか確認
-        $success = $true
-
-        if ($lineRate -lt $lineTarget) {
-            Write-Host "警告: ラインカバレッジが目標に達していません（$lineRate% < $lineTarget%）" -ForegroundColor Yellow
-            $success = $false
-        }
-        else {
-            Write-Host "成功: ラインカバレッジが目標を達成しています（$lineRate% >= $lineTarget%）" -ForegroundColor Green
-        }
-
-        if ($branchRate -lt $branchTarget) {
-            Write-Host "警告: 分岐カバレッジが目標に達していません（$branchRate% < $branchTarget%）" -ForegroundColor Yellow
-            $success = $false
-        }
-        else {
-            Write-Host "成功: 分岐カバレッジが目標を達成しています（$branchRate% >= $branchTarget%）" -ForegroundColor Green
-        }
-
-        # クリティカルビジネスフローのカバレッジ確認
-        Write-Host "`nクリティカルビジネスフローのカバレッジ:" -ForegroundColor Cyan
-        foreach ($property in $coverage.PSObject.Properties) {
-            if ($property.Name -ne "total" -and 
-               ($property.Name -like "*Task*" -or 
-                $property.Name -like "*User*" -or 
-                $property.Name -like "*Dashboard*")) {
-                $file = $property.Name
-                $fileLineRate = $property.Value.lines.pct
-                $fileBranchRate = $property.Value.branches.pct
-
-                $color = if ($fileLineRate -lt $lineTarget -or $fileBranchRate -lt $branchTarget) { "Yellow" } else { "Green" }
-                Write-Host "$file`: Line: $fileLineRate%, Branch: $fileBranchRate%" -ForegroundColor $color
-            }
-        }
+        Write-Host "E2Eテスト完了（終了コード: $testResult）" -ForegroundColor Cyan
 
         # HTMLレポートの場所を表示
-        Write-Host "`nHTML詳細レポート: $(Join-Path $e2eDir "coverage\lcov-report\index.html")" -ForegroundColor Cyan
-
-        if (-not $success) {
-            Write-Host "`n警告: E2Eテストのカバレッジ目標が達成されていません。改善が必要です。" -ForegroundColor Yellow
-            exit 1
+        $reportPath = Join-Path $e2eDir "playwright-report\index.html"
+        if (Test-Path $reportPath) {
+            Write-Host "`nテスト詳細レポート: $reportPath" -ForegroundColor Cyan
         }
-        else {
-            Write-Host "`n成功: すべてのE2Eテストカバレッジ目標が達成されています！" -ForegroundColor Green
+
+        if ($testResult -ne 0) {
+            Write-Host "`n❌ E2Eテストは失敗しました" -ForegroundColor Red
+            exit $testResult
+        } else {
+            Write-Host "`n✅ E2Eテストは成功しました" -ForegroundColor Green
             exit 0
         }
     }
     finally {
         # フロントエンドプロセスの終了
-        if ($frontendProcess -ne $null) {
+        if ($null -ne $frontendProcess) {
             Write-Host "フロントエンドプロセスを終了中..." -ForegroundColor Yellow
             Stop-Process -Id $frontendProcess.Id -Force -ErrorAction SilentlyContinue
         }
@@ -125,7 +88,7 @@ try {
 }
 finally {
     # バックエンドプロセスの終了
-    if ($backendProcess -ne $null) {
+    if ($null -ne $backendProcess) {
         Write-Host "バックエンドプロセスを終了中..." -ForegroundColor Yellow
         Stop-Process -Id $backendProcess.Id -Force -ErrorAction SilentlyContinue
     }

@@ -79,12 +79,14 @@ describe('taskApi Integration Tests', () => {
 
     it('タスクの作成が成功する', async () => {
       const mockResponse = {
-        Id: 1,
-        Title: newTask.title,
-        Description: newTask.description,
-        Status: newTask.status,
-        DueDate: mockISODate,
-        AssignedTo: newTask.assignedTo,
+        id: 1,
+        title: newTask.title,
+        description: newTask.description,
+        status: 0,
+        dueDate: mockISODate,
+        assignedTo: newTask.assignedTo,
+        createdAt: mockISODate,
+        updatedAt: mockISODate,
       };
 
       mockFetch.mockResolvedValueOnce({
@@ -94,12 +96,12 @@ describe('taskApi Integration Tests', () => {
 
       const createdTask = await taskApi.createTask(newTask);
       expect(createdTask).toEqual({
-        id: mockResponse.Id,
-        title: mockResponse.Title,
-        description: mockResponse.Description,
-        status: mockResponse.Status,
-        dueDate: mockResponse.DueDate,
-        assignedTo: mockResponse.AssignedTo,
+        id: mockResponse.id,
+        title: mockResponse.title,
+        description: mockResponse.description,
+        status: TaskStatus.NotStarted,
+        dueDate: mockResponse.dueDate,
+        assignedTo: mockResponse.assignedTo,
       });
     });
 
@@ -139,12 +141,14 @@ describe('taskApi Integration Tests', () => {
       };
 
       const mockResponse = {
-        Id: updatedTask.id,
-        Title: updatedTask.title,
-        Description: updatedTask.description,
-        Status: updatedTask.status,
-        DueDate: mockISODate,
-        AssignedTo: updatedTask.assignedTo,
+        id: updatedTask.id,
+        title: updatedTask.title,
+        description: updatedTask.description,
+        status: 0,
+        dueDate: mockISODate,
+        assignedTo: updatedTask.assignedTo,
+        createdAt: mockISODate,
+        updatedAt: mockISODate,
       };
 
       mockFetch.mockResolvedValueOnce({
@@ -154,12 +158,12 @@ describe('taskApi Integration Tests', () => {
 
       const result = await taskApi.updateTask(updatedTask.id, updatedTask);
       expect(result).toEqual({
-        id: mockResponse.Id,
-        title: mockResponse.Title,
-        description: mockResponse.Description,
-        status: mockResponse.Status,
-        dueDate: mockResponse.DueDate,
-        assignedTo: mockResponse.AssignedTo,
+        id: mockResponse.id,
+        title: mockResponse.title,
+        description: mockResponse.description,
+        status: TaskStatus.NotStarted,
+        dueDate: mockResponse.dueDate,
+        assignedTo: mockResponse.assignedTo,
       });
     });
 

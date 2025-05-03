@@ -45,8 +45,12 @@ describe('TaskList', () => {
 
     expect(screen.getByText('テストタスク1')).toBeInTheDocument();
     expect(screen.getByText('テストタスク2')).toBeInTheDocument();
-    expect(screen.getByText('未着手')).toBeInTheDocument();
-    expect(screen.getByText('進行中')).toBeInTheDocument();
+
+    // ヘッダーテキストの検索を修正
+    const headers = screen.getAllByRole('heading', { level: 2 });
+    expect(headers[0]).toHaveTextContent('未着手');
+    expect(headers[1]).toHaveTextContent('進行中');
+    expect(headers[2]).toHaveTextContent('完了');
   });
 
   it('タスクの編集ボタンが正しく動作する', () => {

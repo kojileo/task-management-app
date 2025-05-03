@@ -62,12 +62,12 @@ describe('taskApi', () => {
 
   it('createTaskが正しく動作する', async () => {
     const mockResponse = {
-      Id: mockTask.id,
-      Title: mockTask.title,
-      Description: mockTask.description,
-      Status: mockTask.status,
-      DueDate: mockISODate,
-      AssignedTo: mockTask.assignedTo,
+      id: mockTask.id,
+      title: mockTask.title,
+      description: mockTask.description,
+      status: 0,
+      dueDate: mockISODate,
+      assignedTo: mockTask.assignedTo,
     };
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -106,12 +106,12 @@ describe('taskApi', () => {
 
   it('updateTaskが正しく動作する', async () => {
     const mockResponse = {
-      Id: mockTask.id,
-      Title: mockTask.title,
-      Description: mockTask.description,
-      Status: mockTask.status,
-      DueDate: mockISODate,
-      AssignedTo: mockTask.assignedTo,
+      id: mockTask.id,
+      title: mockTask.title,
+      description: mockTask.description,
+      status: 0,
+      dueDate: mockISODate,
+      assignedTo: mockTask.assignedTo,
     };
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({

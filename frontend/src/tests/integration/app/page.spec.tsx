@@ -37,6 +37,9 @@ describe('Home Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (taskApi.getAllTasks as jest.Mock).mockResolvedValue(mockTasks);
+    (taskApi.getTaskById as jest.Mock).mockImplementation(id =>
+      Promise.resolve(mockTasks.find(task => task.id === id) || mockTasks[0])
+    );
   });
 
   it('タスクの作成から削除までの一連の操作が正しく動作する', async () => {
@@ -76,6 +79,14 @@ describe('Home Integration Tests', () => {
     });
 
     // タスク作成APIのモック設定
+    const newTaskResponse = {
+      id: 3,
+      title: '新規タスク',
+      description: '新規説明',
+      status: 0, // 数値のステータス
+      dueDate: '2024-12-31',
+      assignedTo: '新規ユーザー',
+    };
     const newTask = {
       id: 3,
       title: '新規タスク',
@@ -84,7 +95,9 @@ describe('Home Integration Tests', () => {
       dueDate: '2024-12-31',
       assignedTo: '新規ユーザー',
     };
-    (taskApi.createTask as jest.Mock).mockResolvedValue(newTask);
+
+    // taskApiのモックを修正して数値型のstatusに対応
+    (taskApi.createTask as jest.Mock).mockImplementation(() => Promise.resolve(newTask));
 
     // フォームを送信
     const form = screen.getByTestId('task-form');
@@ -117,11 +130,17 @@ describe('Home Integration Tests', () => {
     });
 
     // タスク更新APIのモック設定
+    const updatedTaskResponse = {
+      ...newTaskResponse,
+      title: '更新されたタスク',
+    };
     const updatedTask = {
       ...newTask,
       title: '更新されたタスク',
     };
-    (taskApi.updateTask as jest.Mock).mockResolvedValue(updatedTask);
+
+    // updateTaskメソッドをモック
+    (taskApi.updateTask as jest.Mock).mockImplementation(() => Promise.resolve(updatedTask));
 
     // 編集フォームを送信
     await act(async () => {
@@ -186,7 +205,7 @@ describe('Home Integration Tests', () => {
       fireEvent.submit(form);
     });
 
-    // エラーメッセージが表示されることを確認
+    // APIの呼び出しを検証
     await waitFor(() => {
       expect(taskApi.createTask).toHaveBeenCalledWith({
         title: 'エラータスク',
