@@ -35,7 +35,7 @@ describe('taskApi', () => {
 
   beforeEach(() => {
     (global.fetch as jest.Mock).mockClear();
-    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:5000';
+    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:5045';
   });
 
   it('getAllTasksが正しく動作する', async () => {
@@ -46,7 +46,7 @@ describe('taskApi', () => {
 
     const tasks = await taskApi.getAllTasks();
     expect(tasks).toEqual([mockTask]);
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5000/api/Task');
+    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5045/api/Task');
   });
 
   it('getTaskByIdが正しく動作する', async () => {
@@ -57,17 +57,17 @@ describe('taskApi', () => {
 
     const task = await taskApi.getTaskById(1);
     expect(task).toEqual(mockTask);
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5000/api/Task/1');
+    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5045/api/Task/1');
   });
 
   it('createTaskが正しく動作する', async () => {
     const mockResponse = {
-      Id: mockTask.id,
-      Title: mockTask.title,
-      Description: mockTask.description,
-      Status: mockTask.status,
-      DueDate: mockISODate,
-      AssignedTo: mockTask.assignedTo,
+      id: mockTask.id,
+      title: mockTask.title,
+      description: mockTask.description,
+      status: 0,
+      dueDate: mockISODate,
+      assignedTo: mockTask.assignedTo,
     };
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -77,7 +77,7 @@ describe('taskApi', () => {
 
     const task = await taskApi.createTask(mockTaskFormData);
     expect(task).toEqual(mockTask);
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5000/api/Task', {
+    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5045/api/Task', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -106,12 +106,12 @@ describe('taskApi', () => {
 
   it('updateTaskが正しく動作する', async () => {
     const mockResponse = {
-      Id: mockTask.id,
-      Title: mockTask.title,
-      Description: mockTask.description,
-      Status: mockTask.status,
-      DueDate: mockISODate,
-      AssignedTo: mockTask.assignedTo,
+      id: mockTask.id,
+      title: mockTask.title,
+      description: mockTask.description,
+      status: 0,
+      dueDate: mockISODate,
+      assignedTo: mockTask.assignedTo,
     };
 
     (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -121,7 +121,7 @@ describe('taskApi', () => {
 
     const task = await taskApi.updateTask(1, mockTask);
     expect(task).toEqual(mockTask);
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5000/api/Task/1', {
+    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5045/api/Task/1', {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -143,7 +143,7 @@ describe('taskApi', () => {
     });
 
     await taskApi.deleteTask(1);
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5000/api/Task/1', {
+    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5045/api/Task/1', {
       method: 'DELETE',
     });
   });

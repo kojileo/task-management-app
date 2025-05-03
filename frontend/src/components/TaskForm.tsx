@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { validateTaskForm } from '@/lib/validation';
-import { TaskItem, TaskFormData, TaskStatus } from '@/types/task';
+import { TaskItem, TaskFormData, TaskStatus, getStatusStringFromNumber } from '@/types/task';
 
 interface TaskFormProps {
   task?: TaskItem;
@@ -24,7 +24,7 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
     title: task?.title || '',
     description: task?.description || '',
     status: task?.status || TaskStatus.NotStarted,
-    dueDate: task?.dueDate || '',
+    dueDate: task?.dueDate || currentDate,
     assignedTo: task?.assignedTo || '',
   });
 
@@ -37,10 +37,18 @@ export default function TaskForm({ task, onSubmit, onCancel }: TaskFormProps) {
       return;
     }
 
-    onSubmit({
+    // ステータスが数値の場合は文字列に変換
+    const submittingData = {
       ...formData,
       id: task?.id,
-    });
+      // statusが数値なら文字列に変換
+      status:
+        typeof formData.status === 'number'
+          ? getStatusStringFromNumber(formData.status)
+          : formData.status,
+    };
+
+    onSubmit(submittingData);
   };
 
   return (

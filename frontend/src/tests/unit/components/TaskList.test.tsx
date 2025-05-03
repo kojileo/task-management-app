@@ -2,7 +2,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import TaskList from '@/components/TaskList';
 import { TaskItem, TaskStatus } from '@/types/task';
-import { DragEndEvent } from '@dnd-kit/core';
 
 describe('TaskList', () => {
   const mockTasks: TaskItem[] = [
@@ -86,7 +85,7 @@ describe('TaskList', () => {
   });
 
   it('ステータスが変更されたときにonStatusChangeが呼ばれる', () => {
-    const { container } = render(
+    render(
       <TaskList
         tasks={mockTasks}
         loading={false}
@@ -96,25 +95,17 @@ describe('TaskList', () => {
       />
     );
 
-    // ドラッグ&ドロップイベントをシミュレート
-    const taskElement = container.querySelector('.cursor-move');
-    const dropZone = container.querySelector('[data-rbd-droppable-id="InProgress"]');
+    // ステータス変更のセレクトボックスを取得
+    const statusSelect = screen.getByTestId(`status-select-${mockTasks[0].id}`);
 
-    if (taskElement && dropZone) {
-      // ドラッグ開始
-      fireEvent.dragStart(taskElement);
+    // ステータスを変更
+    fireEvent.change(statusSelect, { target: { value: TaskStatus.InProgress } });
 
-      // ドロップ
-      fireEvent.drop(dropZone);
-
-      // ドラッグ終了
-      fireEvent.dragEnd(taskElement);
-
-      expect(mockHandlers.onStatusChange).toHaveBeenCalledWith(
-        mockTasks[0].id,
-        TaskStatus.InProgress
-      );
-    }
+    // ステータス変更のハンドラーが呼ばれることを確認
+    expect(mockHandlers.onStatusChange).toHaveBeenCalledWith(
+      mockTasks[0].id,
+      TaskStatus.InProgress
+    );
   });
 
   it('ローディング中はスケルトンが表示される', () => {

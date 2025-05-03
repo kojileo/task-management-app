@@ -1,0 +1,237 @@
+{
+	"id": "00e6f653-dff4-4942-b875-14641a82582b",
+	"name": "Task Management API",
+	"timestamp": "2025-05-03T00:36:05.583Z",
+	"collection_id": "31099421-7c8fc871-280c-4386-a058-bccbc215f7a9",
+	"folder_id": "31099421-5f985ec7-0526-446a-885d-80c1ff93e652",
+	"environment_id": "0",
+	"totalPass": 15,
+	"delay": 0,
+	"persist": true,
+	"status": "finished",
+	"startedAt": "2025-05-03T00:36:04.815Z",
+	"totalFail": 0,
+	"results": [
+		{
+			"id": "695299d8-c8c8-476f-888d-3ad3f1107c59",
+			"name": "すべてのタスクを取得",
+			"url": "http://localhost:5045/api/task",
+			"time": 91,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"レスポンスタイムが500msより短い": true,
+				"ステータスコードは200である": true,
+				"レスポンスは配列である": true
+			},
+			"testPassFailCounts": {
+				"レスポンスタイムが500msより短い": {
+					"pass": 1,
+					"fail": 0
+				},
+				"ステータスコードは200である": {
+					"pass": 1,
+					"fail": 0
+				},
+				"レスポンスは配列である": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				91
+			],
+			"allTests": [
+				{
+					"レスポンスタイムが500msより短い": true,
+					"ステータスコードは200である": true,
+					"レスポンスは配列である": true
+				}
+			]
+		},
+		{
+			"id": "4b58d507-658b-4382-b0b6-00c16188309e",
+			"name": "IDでタスクを取得",
+			"url": "http://localhost:5045/api/task/1",
+			"time": 49,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"レスポンスタイムが500msより短い": true,
+				"ステータスコードは200または404である": true,
+				"タスクデータが有効である": true
+			},
+			"testPassFailCounts": {
+				"レスポンスタイムが500msより短い": {
+					"pass": 1,
+					"fail": 0
+				},
+				"ステータスコードは200または404である": {
+					"pass": 1,
+					"fail": 0
+				},
+				"タスクデータが有効である": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				49
+			],
+			"allTests": [
+				{
+					"レスポンスタイムが500msより短い": true,
+					"ステータスコードは200または404である": true,
+					"タスクデータが有効である": true
+				}
+			]
+		},
+		{
+			"id": "2450a470-05cc-491e-b054-d9158486f3de",
+			"name": "新しいタスクを作成",
+			"url": "http://localhost:5045/api/task",
+			"time": 25,
+			"responseCode": {
+				"code": 201,
+				"name": "Created"
+			},
+			"tests": {
+				"レスポンスタイムが500msより短い": true,
+				"ステータスコードは201である": true,
+				"レスポンスに新しいタスクIDが含まれている": true,
+				"作成されたタスクのタイトルが正しい": true
+			},
+			"testPassFailCounts": {
+				"レスポンスタイムが500msより短い": {
+					"pass": 1,
+					"fail": 0
+				},
+				"ステータスコードは201である": {
+					"pass": 1,
+					"fail": 0
+				},
+				"レスポンスに新しいタスクIDが含まれている": {
+					"pass": 1,
+					"fail": 0
+				},
+				"作成されたタスクのタイトルが正しい": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				25
+			],
+			"allTests": [
+				{
+					"レスポンスタイムが500msより短い": true,
+					"ステータスコードは201である": true,
+					"レスポンスに新しいタスクIDが含まれている": true,
+					"作成されたタスクのタイトルが正しい": true
+				}
+			]
+		},
+		{
+			"id": "6b30a6d2-ae04-42a7-98cd-6434e99aed6a",
+			"name": "タスクを更新",
+			"url": "http://localhost:5045/api/task/1",
+			"time": 11,
+			"responseCode": {
+				"code": 200,
+				"name": "OK"
+			},
+			"tests": {
+				"レスポンスタイムが500msより短い": true,
+				"ステータスコードは200または404である": true,
+				"更新されたタスクデータが正しい": true
+			},
+			"testPassFailCounts": {
+				"レスポンスタイムが500msより短い": {
+					"pass": 1,
+					"fail": 0
+				},
+				"ステータスコードは200または404である": {
+					"pass": 1,
+					"fail": 0
+				},
+				"更新されたタスクデータが正しい": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				11
+			],
+			"allTests": [
+				{
+					"レスポンスタイムが500msより短い": true,
+					"ステータスコードは200または404である": true,
+					"更新されたタスクデータが正しい": true
+				}
+			]
+		},
+		{
+			"id": "fca117db-bfe9-4b58-8aeb-f152bc2b9312",
+			"name": "タスクを削除",
+			"url": "http://localhost:5045/api/task/1",
+			"time": 10,
+			"responseCode": {
+				"code": 204,
+				"name": "No Content"
+			},
+			"tests": {
+				"レスポンスタイムが500msより短い": true,
+				"ステータスコードは204または404である": true
+			},
+			"testPassFailCounts": {
+				"レスポンスタイムが500msより短い": {
+					"pass": 1,
+					"fail": 0
+				},
+				"ステータスコードは204または404である": {
+					"pass": 1,
+					"fail": 0
+				}
+			},
+			"times": [
+				10
+			],
+			"allTests": [
+				{
+					"レスポンスタイムが500msより短い": true,
+					"ステータスコードは204または404である": true
+				}
+			]
+		}
+	],
+	"count": 1,
+	"totalTime": 186,
+	"collection": {
+		"requests": [
+			{
+				"id": "695299d8-c8c8-476f-888d-3ad3f1107c59",
+				"method": "GET"
+			},
+			{
+				"id": "4b58d507-658b-4382-b0b6-00c16188309e",
+				"method": "GET"
+			},
+			{
+				"id": "2450a470-05cc-491e-b054-d9158486f3de",
+				"method": "POST"
+			},
+			{
+				"id": "6b30a6d2-ae04-42a7-98cd-6434e99aed6a",
+				"method": "PUT"
+			},
+			{
+				"id": "fca117db-bfe9-4b58-8aeb-f152bc2b9312",
+				"method": "DELETE"
+			}
+		]
+	}
+}

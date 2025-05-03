@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using TaskManagement.API.Models;
 using TaskManagement.API.Services;
+using System.Text.Json;
 
 namespace TaskManagement.API.Controllers
 {
@@ -30,7 +31,21 @@ namespace TaskManagement.API.Controllers
             {
                 return NotFound();
             }
-            return Ok(task);
+            
+            // JSONプロパティを明示的に設定
+            var responseObj = new
+            {
+                id = task.Id,
+                title = task.Title,
+                description = task.Description,
+                status = (int)task.Status,
+                dueDate = task.DueDate,
+                assignedTo = task.AssignedTo,
+                createdAt = task.CreatedAt,
+                updatedAt = task.UpdatedAt
+            };
+            
+            return Ok(responseObj);
         }
 
         [HttpPost]
@@ -44,7 +59,21 @@ namespace TaskManagement.API.Controllers
             try
             {
                 var createdTask = await _taskService.CreateTaskAsync(task);
-                return CreatedAtAction(nameof(GetById), new { id = createdTask.Id }, createdTask);
+                
+                // JSONプロパティを明示的に設定
+                var responseObj = new
+                {
+                    id = createdTask.Id,
+                    title = createdTask.Title,
+                    description = createdTask.Description,
+                    status = (int)createdTask.Status,
+                    dueDate = createdTask.DueDate,
+                    assignedTo = createdTask.AssignedTo,
+                    createdAt = createdTask.CreatedAt,
+                    updatedAt = createdTask.UpdatedAt
+                };
+                
+                return StatusCode(201, responseObj);
             }
             catch (ArgumentException ex)
             {
@@ -62,13 +91,27 @@ namespace TaskManagement.API.Controllers
 
             if (id != task.Id)
             {
-                return BadRequest();
+                return BadRequest(new { message = "ID in the request body does not match the ID in the URL." });
             }
 
             try
             {
                 var updatedTask = await _taskService.UpdateTaskAsync(task);
-                return Ok(updatedTask);
+                
+                // JSONプロパティを明示的に設定し、statusを数値として返す
+                var responseObj = new
+                {
+                    id = updatedTask.Id,
+                    title = updatedTask.Title,
+                    description = updatedTask.Description,
+                    status = (int)updatedTask.Status,
+                    dueDate = updatedTask.DueDate,
+                    assignedTo = updatedTask.AssignedTo,
+                    createdAt = updatedTask.CreatedAt,
+                    updatedAt = updatedTask.UpdatedAt
+                };
+                
+                return Ok(responseObj);
             }
             catch (KeyNotFoundException)
             {
