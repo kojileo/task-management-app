@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -23,7 +24,8 @@ namespace TaskManagement.Tests.IntegrationTests
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = null,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+                PropertyNameCaseInsensitive = true
             };
             _jsonOptions.Converters.Add(new JsonStringEnumConverter());
         }
@@ -49,22 +51,35 @@ namespace TaskManagement.Tests.IntegrationTests
                 Description = "テスト用のタスクです",
                 Status = TaskStatus.NotStarted,
                 DueDate = DateTime.Now.AddDays(7),
-                AssignedTo = "Test User",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                AssignedTo = "Test User"
             };
 
-            var createResponse = await _client.PostAsJsonAsync("/api/task", task, _jsonOptions);
-            var createdTask = await createResponse.Content.ReadFromJsonAsync<TaskItem>(_jsonOptions);
+            var createResponse = await _client.PostAsync(
+                "/api/task", 
+                CreateJsonContent(task));
+            
+            createResponse.EnsureSuccessStatusCode();
+            
+            // レスポンスをJSONとして読み込み、Dictionary<string, JsonElement>として処理
+            var jsonString = await createResponse.Content.ReadAsStringAsync();
+            var responseDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonString);
+            
+            Assert.NotNull(responseDict);
+            Assert.True(responseDict.ContainsKey("id"), "レスポンスにIDが含まれていません");
+            var createdTaskId = responseDict["id"].GetInt32();
 
             // Act
-            var response = await _client.GetAsync($"/api/task/{createdTask.Id}");
+            var response = await _client.GetAsync($"/api/task/{createdTaskId}");
 
             // Assert
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<TaskItem>(_jsonOptions);
-            Assert.Equal(createdTask.Id, result.Id);
-            Assert.Equal(task.Title, result.Title);
+            
+            jsonString = await response.Content.ReadAsStringAsync();
+            responseDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonString);
+            
+            Assert.NotNull(responseDict);
+            Assert.Equal(createdTaskId, responseDict["id"].GetInt32());
+            Assert.Equal(task.Title, responseDict["title"].GetString());
         }
 
         [Fact]
@@ -87,54 +102,77 @@ namespace TaskManagement.Tests.IntegrationTests
                 Description = "新規作成のテスト",
                 Status = TaskStatus.NotStarted,
                 DueDate = DateTime.Now.AddDays(10),
-                AssignedTo = "New User",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                AssignedTo = "New User"
             };
 
             // Act
-            var response = await _client.PostAsJsonAsync("/api/task", task, _jsonOptions);
+            var response = await _client.PostAsync(
+                "/api/task", 
+                CreateJsonContent(task));
 
             // Assert
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<TaskItem>(_jsonOptions);
-            Assert.NotNull(result);
-            Assert.Equal(task.Title, result.Title);
-            Assert.Equal(task.Description, result.Description);
+            
+            var jsonString = await response.Content.ReadAsStringAsync();
+            var responseDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonString);
+            
+            Assert.NotNull(responseDict);
+            Assert.True(responseDict.ContainsKey("title"), "レスポンスにタイトルが含まれていません");
+            Assert.Equal(task.Title, responseDict["title"].GetString());
+            Assert.Equal(task.Description, responseDict["description"].GetString());
         }
 
         [Fact]
         public async Task Update_WithValidTask_ReturnsUpdatedTask()
         {
-            // Arrange
+            // Arrange - まず新しいタスクを作成
             var task = new TaskItem
             {
                 Title = "更新前タスク",
                 Description = "更新前の説明",
                 Status = TaskStatus.NotStarted,
                 DueDate = DateTime.Now.AddDays(5),
-                AssignedTo = "Update User",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                AssignedTo = "Update User"
             };
 
-            var createResponse = await _client.PostAsJsonAsync("/api/task", task, _jsonOptions);
-            var createdTask = await createResponse.Content.ReadFromJsonAsync<TaskItem>(_jsonOptions);
+            var createResponse = await _client.PostAsync(
+                "/api/task", 
+                CreateJsonContent(task));
+            
+            createResponse.EnsureSuccessStatusCode();
+            
+            var jsonString = await createResponse.Content.ReadAsStringAsync();
+            var responseDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonString);
+            
+            Assert.NotNull(responseDict);
+            var createdTaskId = responseDict["id"].GetInt32();
 
-            createdTask.Title = "更新後タスク";
-            createdTask.Description = "更新後の説明";
-            createdTask.Status = TaskStatus.InProgress;
-            createdTask.UpdatedAt = DateTime.Now.AddHours(1);
+            // 更新するタスクデータを作成
+            var updatedTask = new
+            {
+                Id = createdTaskId,
+                Title = "更新後タスク",
+                Description = "更新後の説明",
+                Status = 1, // InProgress
+                DueDate = DateTime.Now.AddDays(5),
+                AssignedTo = "Update User"
+            };
 
             // Act
-            var response = await _client.PutAsJsonAsync($"/api/task/{createdTask.Id}", createdTask, _jsonOptions);
+            var response = await _client.PutAsync(
+                $"/api/task/{createdTaskId}", 
+                CreateJsonContent(updatedTask));
 
             // Assert
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<TaskItem>(_jsonOptions);
-            Assert.Equal(createdTask.Title, result.Title);
-            Assert.Equal(createdTask.Description, result.Description);
-            Assert.Equal(createdTask.Status, result.Status);
+            
+            jsonString = await response.Content.ReadAsStringAsync();
+            responseDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonString);
+            
+            Assert.NotNull(responseDict);
+            Assert.Equal(updatedTask.Title, responseDict["title"].GetString());
+            Assert.Equal(updatedTask.Description, responseDict["description"].GetString());
+            Assert.Equal(updatedTask.Status, responseDict["status"].GetInt32());
         }
 
         [Fact]
@@ -147,23 +185,37 @@ namespace TaskManagement.Tests.IntegrationTests
                 Description = "削除テスト用",
                 Status = TaskStatus.NotStarted,
                 DueDate = DateTime.Now.AddDays(3),
-                AssignedTo = "Delete User",
-                CreatedAt = DateTime.Now,
-                UpdatedAt = DateTime.Now
+                AssignedTo = "Delete User"
             };
 
-            var createResponse = await _client.PostAsJsonAsync("/api/task", task, _jsonOptions);
-            var createdTask = await createResponse.Content.ReadFromJsonAsync<TaskItem>(_jsonOptions);
+            var createResponse = await _client.PostAsync(
+                "/api/task", 
+                CreateJsonContent(task));
+            
+            createResponse.EnsureSuccessStatusCode();
+            
+            var jsonString = await createResponse.Content.ReadAsStringAsync();
+            var responseDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonString);
+            
+            Assert.NotNull(responseDict);
+            var createdTaskId = responseDict["id"].GetInt32();
 
             // Act
-            var response = await _client.DeleteAsync($"/api/task/{createdTask.Id}");
+            var response = await _client.DeleteAsync($"/api/task/{createdTaskId}");
 
             // Assert
             Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
 
             // Verify the task is actually deleted
-            var getResponse = await _client.GetAsync($"/api/task/{createdTask.Id}");
+            var getResponse = await _client.GetAsync($"/api/task/{createdTaskId}");
             Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+        }
+
+        // ヘルパーメソッド：オブジェクトをJSONに変換してStringContentを作成
+        private StringContent CreateJsonContent(object obj)
+        {
+            var json = JsonSerializer.Serialize(obj, _jsonOptions);
+            return new StringContent(json, Encoding.UTF8, "application/json");
         }
     }
 } 

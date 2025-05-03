@@ -4,6 +4,12 @@ export enum TaskStatus {
   Completed = 'Completed',
 }
 
+// デバッグヘルパー関数
+export const getStatusStringFromNumber = (statusNumber: number): TaskStatus => {
+  const statusValues = Object.values(TaskStatus);
+  return (statusValues[statusNumber] as TaskStatus) || TaskStatus.NotStarted;
+};
+
 export interface TaskItem {
   id: number;
   title: string;

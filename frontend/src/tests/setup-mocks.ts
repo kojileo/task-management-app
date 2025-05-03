@@ -1,39 +1,5 @@
 import * as React from 'react';
 
-// DnD-kitのモック
-jest.mock('@dnd-kit/core', () => ({
-  DndContext: ({ children }: { children: React.ReactNode }) => children,
-  closestCorners: jest.fn(),
-  useDraggable: jest.fn().mockImplementation(() => ({
-    setNodeRef: jest.fn(),
-    listeners: {},
-    attributes: {},
-    transform: null,
-    isDragging: false,
-  })),
-}));
-
-jest.mock('@dnd-kit/sortable', () => ({
-  SortableContext: ({ children }: { children: React.ReactNode }) => children,
-  useSortable: jest.fn().mockImplementation(() => ({
-    setNodeRef: jest.fn(),
-    listeners: {},
-    attributes: {},
-    transform: null,
-    transition: null,
-    isDragging: false,
-  })),
-  verticalListSortingStrategy: {},
-}));
-
-jest.mock('@dnd-kit/utilities', () => ({
-  CSS: {
-    Transform: {
-      toString: jest.fn().mockImplementation(() => 'translateX(0px) translateY(0px)'),
-    },
-  },
-}));
-
 // react-hot-toastのモック
 jest.mock('react-hot-toast', () => ({
   Toaster: function MockToaster() {

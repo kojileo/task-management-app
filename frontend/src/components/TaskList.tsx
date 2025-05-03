@@ -139,17 +139,21 @@ export default function TaskList({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {Object.values(TaskStatus).map(status => (
-        <div key={status} className="bg-gray-50 rounded-lg p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">{statusLabels[status]}</h2>
-            <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[status]}`}>
-              {tasks.filter(t => t.status === status).length}
-            </span>
-          </div>
-          {tasks
-            .filter(t => t.status === status)
-            .map(task => (
+      {Object.values(TaskStatus).map(status => {
+        // ステータスごとのタスク数を確認
+        const filteredTasks = tasks.filter(t => t.status === status);
+
+        return (
+          <div key={status} className="bg-gray-50 rounded-lg p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900">{statusLabels[status]}</h2>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[status]}`}
+              >
+                {filteredTasks.length}
+              </span>
+            </div>
+            {filteredTasks.map(task => (
               <TaskCard
                 key={`${task.id}-${task.status}`}
                 task={task}
@@ -158,8 +162,9 @@ export default function TaskList({
                 onStatusChange={onStatusChange}
               />
             ))}
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

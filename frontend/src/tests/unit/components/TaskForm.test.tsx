@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import TaskForm from '@/components/TaskForm';
-import { TaskItem, TaskStatus } from '@/types/task';
+import { TaskItem, TaskStatus, getStatusStringFromNumber } from '@/types/task';
 import { toast } from 'react-hot-toast';
 
 // 日付のモック
@@ -56,7 +56,14 @@ describe('TaskForm', () => {
 
     // onSubmitが正しく呼び出されることを確認
     await waitFor(() => {
-      expect(mockHandlers.onSubmit).toHaveBeenCalledWith(mockTask);
+      expect(mockHandlers.onSubmit).toHaveBeenCalledWith({
+        ...mockTask,
+        // statusが数値の場合は文字列に変換する処理があるため
+        status:
+          typeof mockTask.status === 'number'
+            ? getStatusStringFromNumber(mockTask.status)
+            : mockTask.status,
+      });
     });
   });
 
