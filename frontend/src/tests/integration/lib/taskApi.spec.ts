@@ -20,7 +20,7 @@ describe('taskApi Integration Tests', () => {
 
   beforeEach(() => {
     mockFetch.mockClear();
-    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:5000';
+    process.env.NEXT_PUBLIC_API_URL = 'http://localhost:5045';
   });
 
   describe('getAllTasks', () => {
@@ -33,7 +33,7 @@ describe('taskApi Integration Tests', () => {
 
       const tasks = await taskApi.getAllTasks();
       expect(tasks).toEqual(mockTasks);
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:5000/api/Task');
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:5045/api/Task');
     });
 
     it('タスク一覧の取得に失敗した場合、エラーがスローされる', async () => {
@@ -55,7 +55,7 @@ describe('taskApi Integration Tests', () => {
 
       const task = await taskApi.getTaskById(1);
       expect(task).toEqual(mockTask);
-      expect(mockFetch).toHaveBeenCalledWith('http://localhost:5000/api/Task/1');
+      expect(mockFetch).toHaveBeenCalledWith('http://localhost:5045/api/Task/1');
     });
 
     it('指定したIDのタスクの取得に失敗した場合、エラーがスローされる', async () => {

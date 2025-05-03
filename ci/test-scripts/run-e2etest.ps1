@@ -17,7 +17,7 @@ if (-not (Test-Path "node_modules")) {
 $backendDir = Join-Path $PSScriptRoot "..\..\backend\TaskManagement.API"
 Write-Host "バックエンドをビルド・起動中..." -ForegroundColor Yellow
 Push-Location $backendDir
-$backendProcess = Start-Process -FilePath "dotnet" -ArgumentList "run", "--urls=http://localhost:5000" -PassThru -NoNewWindow
+$backendProcess = Start-Process -FilePath "dotnet" -ArgumentList "run", "--urls=http://localhost:5045" -PassThru -NoNewWindow
 Pop-Location
 
 # 少し待機してバックエンドが起動するのを待つ

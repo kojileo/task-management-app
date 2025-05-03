@@ -1,0 +1,262 @@
+{
+	"info": {
+		"_postman_id": "99c9881a-c23e-4405-919b-04225cf020c2",
+		"name": "Task Management API",
+		"description": "タスク管理アプリケーションのAPIエンドポイント",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "31099421"
+	},
+	"item": [
+		{
+			"name": "タスク",
+			"item": [
+				{
+					"name": "すべてのタスクを取得",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"ステータスコードは200である\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"レスポンスは配列である\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(Array.isArray(jsonData)).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/task",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"task"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "IDでタスクを取得",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"ステータスコードは200または404である\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test(\"タスクデータが有効である\", function () {",
+									"        var jsonData = pm.response.json();",
+									"        pm.expect(jsonData.id).to.eql(parseInt(pm.variables.get(\"taskId\")));",
+									"        pm.expect(jsonData.title).to.be.a('string');",
+									"        pm.expect(jsonData.description).to.be.a('string');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/task/{{taskId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"task",
+								"{{taskId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "新しいタスクを作成",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"ステータスコードは201である\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"レスポンスに新しいタスクIDが含まれている\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.id).to.be.a('number');",
+									"    pm.variables.set(\"createdTaskId\", jsonData.id);",
+									"});",
+									"",
+									"pm.test(\"作成されたタスクのタイトルが正しい\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.title).to.eql(\"新しいタスク\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"新しいタスク\",\n  \"description\": \"これは新しいタスクの説明です\",\n  \"status\": 0,\n  \"dueDate\": \"2023-12-31T00:00:00\",\n  \"assignedTo\": \"ユーザー名\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/task",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"task"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "タスクを更新",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"ステータスコードは200または404である\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    pm.test(\"更新されたタスクデータが正しい\", function () {",
+									"        var jsonData = pm.response.json();",
+									"        pm.expect(jsonData.id).to.eql(parseInt(pm.variables.get(\"taskId\")));",
+									"        pm.expect(jsonData.title).to.eql(\"更新されたタスク\");",
+									"        pm.expect(jsonData.status).to.eql(1);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": {{taskId}},\n  \"title\": \"更新されたタスク\",\n  \"description\": \"これは更新されたタスクの説明です\",\n  \"status\": 1,\n  \"dueDate\": \"2023-12-31T00:00:00\",\n  \"assignedTo\": \"ユーザー名\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/task/{{taskId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"task",
+								"{{taskId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "タスクを削除",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"ステータスコードは204または404である\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([204, 404]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/task/{{taskId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"task",
+								"{{taskId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// コレクション全体の前処理スクリプト",
+					"console.log('タスク管理APIテスト実行開始');"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// コレクション全体のテストスクリプト",
+					"pm.test(\"レスポンスタイムが500msより短い\", function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(500);",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:5045",
+			"type": "string"
+		},
+		{
+			"key": "taskId",
+			"value": "1",
+			"type": "string"
+		}
+	]
+}

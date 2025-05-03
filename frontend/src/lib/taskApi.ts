@@ -1,6 +1,6 @@
 import { TaskItem, TaskFormData } from '@/types/task';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5045';
 
 export default {
   async getAllTasks(): Promise<TaskItem[]> {
