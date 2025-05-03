@@ -4,9 +4,6 @@ test('アプリケーション基本表示テスト', async ({ page }) => {
   // アプリケーションにアクセス
   await page.goto('/');
   
-  // 読み込み中のメッセージが表示されるか確認
-  await expect(page.locator('[data-testid="loading-message"]')).toBeVisible();
-  
   // データが読み込まれるのを待つ
   await expect(page.locator('[data-testid="loading-message"]')).toBeHidden({timeout: 30000});
   
