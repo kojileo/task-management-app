@@ -61,7 +61,7 @@ npm run test:watch
 npm run test:coverage
 ```
 
-### ユニットテスト実行（ライン50%、分岐40%の目標）
+### ユニットテスト実行（ライン60%、分岐50%の目標）
 ```powershell
 powershell -File "ci/run-frontend-unittest.ps1"
 ```
@@ -69,11 +69,6 @@ powershell -File "ci/run-frontend-unittest.ps1"
 ### インテグレーションテスト実行（ライン80%、分岐70%の目標）
 ```powershell
 powershell -File "ci/run-frontend-integrationtest.ps1"
-```
-
-### すべてのテストを一度に実行
-```powershell
-powershell -File "ci/run-frontend-test.ps1"
 ```
 
 ## 静的解析

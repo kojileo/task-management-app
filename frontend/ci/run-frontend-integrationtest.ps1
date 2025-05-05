@@ -11,8 +11,8 @@ $currentDir = Get-Location
 
 Write-Host "Starting frontend integration tests..." -ForegroundColor Cyan
 
-# 統合テスト実行（src/tests/integration ディレクトリ内の .spec.{ts,tsx} ファイルを対象）
-npm run test:coverage -- --testMatch="**/src/tests/integration/**/*.spec.{ts,tsx}"
+# 統合テスト実行（src/**/*.spec.{ts,tsx} ファイルを対象）
+npm run test:coverage -- --testMatch="**/src/**/*.test.{ts,tsx}"
 
 # 終了コードを確認
 if ($LASTEXITCODE -ne 0) {

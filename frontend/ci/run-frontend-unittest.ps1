@@ -11,8 +11,8 @@ $currentDir = Get-Location
 
 Write-Host "Starting frontend unit tests..." -ForegroundColor Cyan
 
-# ユニットテスト実行（src/tests/unit ディレクトリ内の .test.{ts,tsx} ファイルを対象）
-npm run test:coverage -- --testMatch="**/src/tests/unit/**/*.test.{ts,tsx}"
+# ユニットテスト実行（src/**/*.test.{ts,tsx} ファイルを対象）
+npm run test:coverage -- --testMatch="**/src/**/*.spec.{ts,tsx}"
 
 # 終了コードを確認
 if ($LASTEXITCODE -ne 0) {

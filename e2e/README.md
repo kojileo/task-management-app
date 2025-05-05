@@ -1,116 +1,133 @@
-# タスク管理アプリケーションのE2Eテスト
+# E2Eテスト（Playwright）
 
-このディレクトリにはタスク管理アプリケーションのE2Eテストが含まれています。[Playwright](https://playwright.dev/)を使用して実装されています。
+このディレクトリにはタスク管理アプリケーションのE2E（エンドツーエンド）テスト関連ファイルが格納されています。E2Eテストには[Playwright](https://playwright.dev/)を使用しています。
 
-## 前提条件
+## ディレクトリ構成
 
-- Node.js 14以上
-- npm 6以上
-- テスト対象のアプリケーションが起動していること
+```
+e2e/
+ ├── tests/                       # テストスクリプト
+ │   ├── task-management.test.ts   # タスク管理の基本機能テスト
+ │   └── simple.test.ts            # シンプルな動作確認テスト
+ ├── playwright.config.ts         # Playwright設定ファイル
+ ├── package.json                 # 依存関係とスクリプト定義
+ ├── test-results/                # テスト結果（スクリーンショット等）
+ ├── playwright-report/           # HTMLレポート
+ └── aitest/                      # AIエージェントによるE2Eテスト
+```
+
+## 主要テストシナリオ
+
+`task-management.test.ts`では、以下の一連のフローをテストしています：
+
+1. **タスク作成**: 新規タスクの作成と検証
+2. **タスク編集**: 作成したタスクの内容更新
+3. **ステータス変更**: タスクのステータス変更（未着手→進行中→完了）
+4. **タスク削除**: 完了したタスクの削除
+
+このテストは実際のユーザー操作を模倣し、フロントエンドとバックエンドの統合をエンドツーエンドで検証します。
+
+## 必要条件
+
+- Node.js 16以上
+- タスク管理アプリのフロントエンドおよびバックエンドが動作していること
 
 ## セットアップ
 
 ```bash
-# 依存関係をインストール
+# 依存関係のインストール
 npm install
 
-# Playwrightブラウザをインストール
+# Playwrightブラウザのインストール
 npx playwright install
 ```
 
 ## テスト実行方法
 
-### Windowsの場合
-
 ```bash
-# 全テストをGUIモードで実行
-run-tests.bat
+# すべてのテストを実行
+npm test
 
-# ヘッドレスモードで実行（CI環境向け）
-run-tests.bat headless
+# UIモードでテストを実行（対話型）
+npm run test:ui
 
-# デバッグモードで実行
-run-tests.bat headed debug
+# ヘッドレスモードで特定のテストを実行
+npm run test:task-management
 
-# 特定のブラウザでのみ実行（chrome, firefox, webkit, edge）
-run-tests.bat headed normal chrome
+# デバッグモードでテストを実行
+npm run test:debug
 
-# 特定のテストのみ実行（テスト名の一部を指定）
-run-tests.bat headed normal all "タスク作成"
-
-# テスト実行後にレポートを開く
-run-tests.bat headed normal all "" report
+# ブラウザを表示してテストを実行
+npm run test:headed
 ```
 
-### Linux/Macの場合
+## テスト結果の確認
+
+テスト実行後、以下の方法で結果を確認できます：
 
 ```bash
-# 実行権限を付与
-chmod +x run-tests.sh
-
-# 全テストをGUIモードで実行
-./run-tests.sh
-
-# ヘッドレスモードで実行（CI環境向け）
-./run-tests.sh headless
-
-# デバッグモードで実行
-./run-tests.sh headed debug
-
-# 特定のブラウザでのみ実行（chrome, firefox, webkit, edge）
-./run-tests.sh headed normal chrome
-
-# 特定のテストのみ実行（テスト名の一部を指定）
-./run-tests.sh headed normal all "タスク作成"
-
-# テスト実行後にレポートを開く
-./run-tests.sh headed normal all "" report
+# HTMLレポートを開く
+npm run report
 ```
 
-## テストファイル構成
+また、テスト実行中のスクリーンショットとビデオは `test-results` ディレクトリに保存されます。
 
-- `task-flow.spec.ts` - タスク作成から完了までの基本フロー
-- `task-management.spec.ts` - 総合的なタスク管理テスト
+## Playwright設定
 
-## レポート
+`playwright.config.ts`では以下の設定を行っています：
 
-テスト実行後、`playwright-report`ディレクトリにHTMLレポートが生成されます。以下のコマンドで表示できます：
-
-```bash
-npx playwright show-report
-```
-
-## スクリーンショット
-
-テスト実行中のスクリーンショットは`test-results`ディレクトリに保存されます。
-
-## テスト環境設定
-
-`playwright.config.ts`ファイルでテスト環境の設定を行っています：
-
-- 複数ブラウザでのテスト（Chrome, Firefox, Safari, Edge）
-- モバイルブラウザでのテスト
-- CI環境での設定
-- タイムアウト値などのパラメータ設定
+- **ブラウザ**: Chrome（デフォルト）、Firefox、Safari、Edgeも設定可能
+- **モバイル対応**: モバイルブラウザでのテストも設定可能
+- **タイムアウト**: アクション、ナビゲーション、期待値の待機時間
+- **リトライ**: テスト失敗時の再試行回数（CI環境では2回）
+- **レポート**: HTML、JSON、コンソール出力
+- **スクリーンショット**: テスト失敗時に自動取得
+- **ビデオ**: 初回リトライ時に録画
 
 ## トラブルシューティング
 
-### テストが失敗する場合
+- **テスト失敗時**: `test-results`ディレクトリのスクリーンショットを確認
+- **セレクタの問題**: テスト内の複数のフォールバックメカニズムを確認
+- **タイミングの問題**: `expect`内のタイムアウト値を調整
 
-1. アプリケーションが正常に起動しているか確認
-2. Playwrightブラウザが正しくインストールされているか確認
-3. テスト中のスクリーンショットで何が起きているか確認
-4. デバッグモードで実行して詳細な情報を確認
+## カスタマイズ
+
+新しいテストを追加する場合は、以下の手順で行います：
+
+1. `tests`ディレクトリに新しいテストファイルを作成
+2. テストシナリオを記述
+3. `package.json`の`scripts`セクションにテスト実行コマンドを追加
+
+## AIエージェントによるE2Eテスト
+
+`aitest`ディレクトリには、AIエージェントを活用した高度なE2Eテストが含まれています。これらはPlaywright Model Composition Pattern（MCP）を使用して実装されています。
+
+### AIテストの特徴
+
+- **インテリジェントなテスト**: 従来のE2Eテストよりも柔軟にUIの変更に対応
+- **自己修復能力**: セレクタが変更されても自動的に適応
+- **自然言語指示**: 自然言語でテスト指示を記述可能
+
+### AIテスト実行方法
 
 ```bash
-# デバッグモードで実行
-run-tests.bat headed debug
+# 必要な依存関係をインストール
+cd aitest
+pip install -r requirements.txt
+
+# 環境設定
+# 1. .envファイルを作成しAPIキーを設定
+# 2. mcp_config.jsonにMCPサーバー設定を記述
+
+# AIエージェントテストを実行
+python praywrite_mcp_langchain_tools.py
 ```
 
-### ブラウザが表示されない場合
+### AIテスト活用のベストプラクティス
 
-```bash
-# 依存関係を再インストール
-npm install
-npx playwright install
-``` 
+1. 頻繁に変更されるUIコンポーネントのテストに使用
+2. 複雑なユーザーフローの検証に活用
+3. 従来のE2Eテストと組み合わせて使用し、相互補完する
+4. 自然言語でのテストドキュメント自動生成に活用
+
+AI駆動テストと従来のE2Eテストを組み合わせることで、より堅牢で持続可能なテスト戦略を実現できます。
