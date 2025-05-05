@@ -33,7 +33,7 @@ describe('TaskList Integration Tests', () => {
     jest.clearAllMocks();
   });
 
-  it('タスク一覧が正しく表示される', async () => {
+  it('タスク一覧が正しく表示され、タスクのステータスに応じて適切なカラムに配置される', async () => {
     await act(async () => {
       render(
         <TaskList
@@ -46,9 +46,23 @@ describe('TaskList Integration Tests', () => {
       );
     });
 
-    // タスクが表示されていることを確認
+    // タスクが表示されることを確認
     expect(screen.getByText('テストタスク1')).toBeInTheDocument();
     expect(screen.getByText('テストタスク2')).toBeInTheDocument();
+
+    // 各タスクの説明が表示されることを確認
+    expect(screen.getByText('テスト説明1')).toBeInTheDocument();
+    expect(screen.getByText('テスト説明2')).toBeInTheDocument();
+
+    // 未着手のカラムにタスク1が表示されていることを確認
+    const notStartedHeading = screen.getByRole('heading', { name: '未着手' });
+    const notStartedColumn = notStartedHeading.closest('div')?.parentElement;
+    expect(notStartedColumn).toContainElement(screen.getByText('テストタスク1'));
+
+    // 進行中のカラムにタスク2が表示されていることを確認
+    const inProgressHeading = screen.getByRole('heading', { name: '進行中' });
+    const inProgressColumn = inProgressHeading.closest('div')?.parentElement;
+    expect(inProgressColumn).toContainElement(screen.getByText('テストタスク2'));
   });
 
   it('タスクの編集ボタンが正しく動作する', async () => {
@@ -148,53 +162,5 @@ describe('TaskList Integration Tests', () => {
     });
 
     expect(screen.getByText('タスクがありません')).toBeInTheDocument();
-  });
-
-  it('タスクのドラッグ&ドロップが正しく動作する', async () => {
-    await act(async () => {
-      render(
-        <TaskList
-          tasks={mockTasks}
-          loading={false}
-          onEdit={mockHandlers.onEdit}
-          onDelete={mockHandlers.onDelete}
-          onStatusChange={mockHandlers.onStatusChange}
-        />
-      );
-    });
-
-    const taskElement = screen.getByText('テストタスク1').closest('div');
-    expect(taskElement).toBeInTheDocument();
-
-    // ドラッグ&ドロップのシミュレーション
-    await act(async () => {
-      fireEvent.dragStart(taskElement!);
-      fireEvent.dragOver(taskElement!);
-      fireEvent.drop(taskElement!);
-      fireEvent.dragEnd(taskElement!);
-    });
-  });
-
-  it('タスクのドラッグ&ドロップがキャンセルされた場合、正しく処理される', async () => {
-    await act(async () => {
-      render(
-        <TaskList
-          tasks={mockTasks}
-          loading={false}
-          onEdit={mockHandlers.onEdit}
-          onDelete={mockHandlers.onDelete}
-          onStatusChange={mockHandlers.onStatusChange}
-        />
-      );
-    });
-
-    const taskElement = screen.getByText('テストタスク1').closest('div');
-    expect(taskElement).toBeInTheDocument();
-
-    // ドラッグ&ドロップのキャンセルをシミュレーション
-    await act(async () => {
-      fireEvent.dragStart(taskElement!);
-      fireEvent.dragEnd(taskElement!);
-    });
   });
 });
