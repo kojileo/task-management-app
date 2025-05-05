@@ -2,21 +2,7 @@
 
 ## 1. テスト戦略の概要
 
-### 1.1 テストピラミッドとテスティングトロフィー
-
-バックエンドのテストは以下定義で実施：
-
-1. **単体テスト（Unit Tests）**
-   - 最も数が多く、実行時間が短いテスト
-   - コンポーネントやメソッドを独立して検証
-   - モックやスタブを活用して依存関係を分離
-
-2. **統合テスト（Integration Tests）**
-   - 複数のコンポーネントの相互作用を検証
-
-3. **API/契約テスト**
-   - バックエンドAPIの動作と契約を検証
-   - バックエンドの連携を保証
+### 1.1 開発時のテストタイプ
 
 フロントエンドのテストは以下定義で実施：
 
@@ -37,6 +23,20 @@
    - `.test.tsx` ファイルで実装
    - 実際のコンポーネント階層を使用し、状態管理や複数コンポーネント間の連携をテスト
 
+バックエンドのテストは以下定義で実施：
+
+1. **単体テスト（Unit Tests）**
+   - 最も数が多く、実行時間が短いテスト
+   - コンポーネントやメソッドを独立して検証
+   - モックやスタブを活用して依存関係を分離
+
+2. **統合テスト（Integration Tests）**
+   - 複数のコンポーネントの相互作用を検証
+
+3. **APIテスト**
+   - バックエンドAPIの動作と契約を検証
+   - バックエンドの連携を保証
+
 フロントエンドとバックエンド一気通貫のテストは以下定義で実施：
 
 1. **E2Eテスト（End-to-End Tests）**
@@ -45,23 +45,41 @@
 
 ### 1.2 テストカバレッジ目標
 
+全体的なカバレッジ目標は下記の通りとします：
 
 | コンポーネント | テストタイプ | ラインカバレッジ目標 | 分岐カバレッジ目標 |
 |------------|----------|--------------|--------------|
 | **フロントエンド** | 静的解析 | 100% | N/A |
-| **フロントエンド** | ユニットテスト | 50% | 40% |
-| **フロントエンド** | インテグレーションテスト | 80% | 70% |
-| **バックエンド** | ユニットテスト | 85% | 75% |
-| **バックエンド** | インテグレーションテスト | 60% | 50% |
+| **フロントエンド** | 単体テスト | 60% | 50% |
+| **フロントエンド** | 統合テスト | 80% | 70% |
+| **バックエンド** | 単体テスト | 85% | 75% |
+| **バックエンド** | 統合テスト | 60% | 50% |
 | **バックエンド** | APIテスト | 40% | 30% |
-| **フロントエンド+バックエンド** | E2Eテスト | 20% | 15% |
+| **フロントエンド+バックエンド** | E2Eテスト | 30% | 20% |
 
 ### 重要機能のテストカバレッジ目標（100%必須）
 
+以下の重要機能については、100%のカバレッジを目標とします：
+
+#### フロントエンド
+
 | 機能カテゴリ | テストタイプ | ラインカバレッジ目標 | 分岐カバレッジ目標 | 対象ファイル |
 |------------|----------|--------------|--------------|------------|
-| **API通信処理** | 全テストタイプ | 100% | 100% ||
+| **API通信処理** | 単体テスト | 100% | 100% | `src/lib/taskApi.ts` |
+| **バリデーション** | 単体テスト | 100% | 100% | `src/lib/validation.ts` |
+| **フォーム検証** | 単体テスト | 100% | 100% | `src/components/TaskForm.tsx` |
+| **タスク表示** | 単体テスト | 100% | 100% | `src/components/TaskCard.tsx` |
+| **状態管理** | 統合テスト | 100% | 100% | `src/app/page.tsx` |
 
+#### バックエンド
+
+| 機能カテゴリ | テストタイプ | ラインカバレッジ目標 | 分岐カバレッジ目標 | 対象ファイル |
+|------------|----------|--------------|--------------|------------|
+| **API契約** | 単体テスト | 100% | 100% | `TaskManagement.API.Controllers/TaskController.cs` |
+| **ビジネスロジック** | 単体テスト | 100% | 100% | `TaskManagement.API.Services/TaskService.cs` |
+| **データアクセス** | 単体テスト | 100% | 100% | `TaskManagement.API.Repositories/TaskRepository.cs` |
+| **エラーハンドリング** | 統合テスト | 100% | 100% | `TaskManagement.API.Controllers/TaskController.cs` |
+| **データフロー全体** | APIテスト | 100% | 100% | 主要エンドポイント（/api/task/*） |
 
 ### 1.3 テスト自動化の原則
 
@@ -200,6 +218,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import TaskList from '@/components/TaskList';
 import TaskForm from '@/components/TaskForm';
+import { TaskItem, TaskStatus, TaskFormData } from '@/types/task';
 
 // 統合テスト用のTaskBoardコンポーネントを作成
 function TaskBoard() {
@@ -267,24 +286,6 @@ describe('TaskBoard Integration Tests', () => {
       expect(screen.getByText('新しいタスク')).toBeInTheDocument();
     });
   });
-  
-  it('タスクのステータス変更が動作する', async () => {
-    render(<TaskBoard />);
-    
-    // 初期タスクのステータスを変更
-    const statusSelect = screen.getByTestId('status-select-1');
-    fireEvent.change(statusSelect, { target: { value: TaskStatus.InProgress } });
-    
-    // 未着手のカラムにタスクがなくなることを確認
-    const notStartedHeading = screen.getByRole('heading', { name: '未着手' });
-    const notStartedColumn = notStartedHeading.closest('div')?.parentElement;
-    expect(notStartedColumn).not.toContainElement(screen.getByText('初期タスク'));
-    
-    // 進行中のカラムにタスクが移動することを確認
-    const inProgressHeading = screen.getByRole('heading', { name: '進行中' });
-    const inProgressColumn = inProgressHeading.closest('div')?.parentElement;
-    expect(inProgressColumn).toContainElement(screen.getByText('初期タスク'));
-  });
 });
 ```
 
@@ -311,7 +312,7 @@ describe('TaskBoard Integration Tests', () => {
 
 - **TaskCard**: 単一のタスクカードの表示と操作（純粋コンポーネント）
 - **TaskList**: 複数のタスクカードを管理・表示（複合コンポーネント）
-- **TaskBoard**: タスクリストとフォームを組み合わせ、状態管理（コンテナ）
+- **page.tsx**: タスクリストとフォームを組み合わせ、状態管理（コンテナ）
 
 この設計により、以下のテスト戦略が可能になります：
 
@@ -320,7 +321,7 @@ describe('TaskBoard Integration Tests', () => {
    - TaskList: TaskCardのレンダリング（TaskCardをモック）
 
 2. **統合テスト**:
-   - TaskBoard: 実際のコンポーネントを使用し、ユーザーフロー全体
+   - page.tsx: 実際のコンポーネントを使用し、ユーザーフロー全体
 
 ## 3. バックエンドテスト
 
@@ -452,7 +453,7 @@ public class TaskControllerTests : IClassFixture<CustomWebApplicationFactory>
 - **エンドツーエンドのリクエスト**: 実際のHTTPリクエスト/レスポンスを使用
 - **テストデータの独立性**: テスト間の影響を排除
 
-### 3.3 API/契約テスト (Postman)
+### 3.3 APIテスト (Postman)
 
 Postmanを使ったAPIテスト例：
 
@@ -579,15 +580,17 @@ test.describe('タスク管理アプリケーションのE2Eテスト', () => {
 
 ### 6.1 テスト戦略の主要ポイント
 
-1. **テストの階層化**: 単体→統合→E2Eのピラミッド構造
+1. **テストの階層化**: 単体→統合→API→E2Eの構造
 2. **適切なモック化**: 単体テストではモック、統合テストでは実際のコンポーネント
 3. **ファイル命名規則**: `.spec.tsx`は単体テスト、`.test.tsx`は統合テスト
 4. **テスト対象の明確化**: 単体テストは個々のコンポーネント、統合テストはユーザーフロー
+5. **重要機能の100%カバレッジ**: セキュリティ、バリデーション、APIなどの重要な機能は完全にカバー
 
 ### 6.2 今後の改善計画
 
-1. **テストカバレッジの向上**: 特に重要なビジネスロジックのカバレッジを100%に
+1. **テストカバレッジの向上**: 特に重要なビジネスロジックのカバレッジを確実に100%に
 2. **ビジュアルリグレッションテストの導入**: Storybookとの連携
 3. **パフォーマンステストの追加**: ロード時間やレンダリング効率の測定
 4. **アクセシビリティテストの強化**: WAI-ARIAガイドラインへの準拠チェック
 5. **モバイル対応テストの拡充**: レスポンシブデザインの検証強化
+6. **セキュリティテストの導入**: OWASP Top 10に基づく脆弱性テスト
