@@ -30,8 +30,8 @@ const customJestConfig = {
     },
   },
   testMatch: [
-    '<rootDir>/src/**/*.test.{js,jsx,ts,tsx}',
     '<rootDir>/src/**/*.spec.{js,jsx,ts,tsx}',
+    '<rootDir>/src/**/*.test.{js,jsx,ts,tsx}',
   ],
   coveragePathIgnorePatterns: [
     '/node_modules/',
