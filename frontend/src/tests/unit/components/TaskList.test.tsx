@@ -1,9 +1,31 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import TaskList from '@/components/TaskList';
 import { TaskItem, TaskStatus } from '@/types/task';
 
-describe('TaskList', () => {
+// TaskCardコンポーネントをモック化
+jest.mock('@/components/TaskCard', () => {
+  const actual = jest.requireActual('@/types/task');
+
+  return {
+    __esModule: true,
+    default: jest.fn(({ task }) => (
+      <div data-testid={`mocked-task-card-${task.id}`}>{task.title}</div>
+    )),
+    statusColors: {
+      [actual.TaskStatus.NotStarted]: 'mocked-blue',
+      [actual.TaskStatus.InProgress]: 'mocked-yellow',
+      [actual.TaskStatus.Completed]: 'mocked-green',
+    },
+    statusLabels: {
+      [actual.TaskStatus.NotStarted]: '未着手',
+      [actual.TaskStatus.InProgress]: '進行中',
+      [actual.TaskStatus.Completed]: '完了',
+    },
+  };
+});
+
+describe('TaskList Unit Tests', () => {
   const mockTasks: TaskItem[] = [
     {
       id: 1,
@@ -29,83 +51,8 @@ describe('TaskList', () => {
     onStatusChange: jest.fn(),
   };
 
-  it('タスクリストが正しく表示される', () => {
-    const { getByRole } = render(
-      <TaskList
-        tasks={mockTasks}
-        loading={false}
-        onEdit={mockHandlers.onEdit}
-        onDelete={mockHandlers.onDelete}
-        onStatusChange={mockHandlers.onStatusChange}
-      />
-    );
-
-    // 各ステータスのセクションが表示されていることを確認
-    expect(getByRole('heading', { name: '未着手' })).toBeInTheDocument();
-    expect(getByRole('heading', { name: '進行中' })).toBeInTheDocument();
-    expect(getByRole('heading', { name: '完了' })).toBeInTheDocument();
-
-    // タスクが正しく表示されていることを確認
-    expect(screen.getByText('タスク1')).toBeInTheDocument();
-    expect(screen.getByText('タスク2')).toBeInTheDocument();
-  });
-
-  it('編集ボタンがクリックされたときにonEditが呼ばれる', () => {
-    render(
-      <TaskList
-        tasks={mockTasks}
-        loading={false}
-        onEdit={mockHandlers.onEdit}
-        onDelete={mockHandlers.onDelete}
-        onStatusChange={mockHandlers.onStatusChange}
-      />
-    );
-
-    const editButtons = screen.getAllByRole('button', { name: /を編集$/ });
-    fireEvent.click(editButtons[0]);
-
-    expect(mockHandlers.onEdit).toHaveBeenCalledWith(mockTasks[0]);
-  });
-
-  it('削除ボタンがクリックされたときにonDeleteが呼ばれる', () => {
-    render(
-      <TaskList
-        tasks={mockTasks}
-        loading={false}
-        onEdit={mockHandlers.onEdit}
-        onDelete={mockHandlers.onDelete}
-        onStatusChange={mockHandlers.onStatusChange}
-      />
-    );
-
-    const deleteButtons = screen.getAllByRole('button', { name: /を削除$/ });
-    fireEvent.click(deleteButtons[0]);
-
-    expect(mockHandlers.onDelete).toHaveBeenCalledWith(mockTasks[0].id);
-  });
-
-  it('ステータスが変更されたときにonStatusChangeが呼ばれる', () => {
-    render(
-      <TaskList
-        tasks={mockTasks}
-        loading={false}
-        onEdit={mockHandlers.onEdit}
-        onDelete={mockHandlers.onDelete}
-        onStatusChange={mockHandlers.onStatusChange}
-      />
-    );
-
-    // ステータス変更のセレクトボックスを取得
-    const statusSelect = screen.getByTestId(`status-select-${mockTasks[0].id}`);
-
-    // ステータスを変更
-    fireEvent.change(statusSelect, { target: { value: TaskStatus.InProgress } });
-
-    // ステータス変更のハンドラーが呼ばれることを確認
-    expect(mockHandlers.onStatusChange).toHaveBeenCalledWith(
-      mockTasks[0].id,
-      TaskStatus.InProgress
-    );
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   it('ローディング中はスケルトンが表示される', () => {
@@ -119,8 +66,75 @@ describe('TaskList', () => {
       />
     );
 
-    // スケルトンローディングの要素が表示されていることを確認
+    // スケルトンローディングの要素が表示されることを確認
     const skeletons = screen.getAllByTestId('skeleton-loading');
     expect(skeletons.length).toBeGreaterThan(0);
+  });
+
+  it('タスクが空の場合はメッセージが表示される', () => {
+    render(
+      <TaskList
+        tasks={[]}
+        loading={false}
+        onEdit={mockHandlers.onEdit}
+        onDelete={mockHandlers.onDelete}
+        onStatusChange={mockHandlers.onStatusChange}
+      />
+    );
+
+    // タスクが空の場合のメッセージが表示されることを確認
+    expect(screen.getByText('タスクがありません')).toBeInTheDocument();
+  });
+
+  it('各ステータスごとにタスクが表示される', () => {
+    render(
+      <TaskList
+        tasks={mockTasks}
+        loading={false}
+        onEdit={mockHandlers.onEdit}
+        onDelete={mockHandlers.onDelete}
+        onStatusChange={mockHandlers.onStatusChange}
+      />
+    );
+
+    // 各ステータスのセクションが表示されていることを確認
+    expect(screen.getByRole('heading', { name: '未着手' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '進行中' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '完了' })).toBeInTheDocument();
+
+    // モックされたTaskCardがレンダリングされているか確認
+    expect(screen.getByTestId('mocked-task-card-1')).toBeInTheDocument();
+    expect(screen.getByTestId('mocked-task-card-2')).toBeInTheDocument();
+
+    // タスクのタイトルが表示されていることを確認
+    expect(screen.getByText('タスク1')).toBeInTheDocument();
+    expect(screen.getByText('タスク2')).toBeInTheDocument();
+  });
+
+  it('タスクのカウントが表示される', () => {
+    render(
+      <TaskList
+        tasks={mockTasks}
+        loading={false}
+        onEdit={mockHandlers.onEdit}
+        onDelete={mockHandlers.onDelete}
+        onStatusChange={mockHandlers.onStatusChange}
+      />
+    );
+
+    // 未着手のタスク数が「1」であることを確認
+    const notStartedHeading = screen.getByRole('heading', { name: '未着手' });
+    const notStartedColumn = notStartedHeading.closest('div')?.parentElement;
+    expect(notStartedColumn).toHaveTextContent('1');
+
+    // 進行中のタスク数が「1」であることを確認
+    const inProgressHeading = screen.getByRole('heading', { name: '進行中' });
+    const inProgressColumn = inProgressHeading.closest('div')?.parentElement;
+    expect(inProgressColumn).toHaveTextContent('1');
+
+    // 完了のタスク数が「0」であることを確認
+    const completedHeading = screen.getByRole('heading', { name: '完了' });
+    const completedColumn = completedHeading.closest('div')?.parentElement;
+    expect(completedColumn).toHaveTextContent('0');
   });
 });

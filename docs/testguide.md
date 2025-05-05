@@ -1,349 +1,593 @@
-# テスト戦略ガイドライン
+# クラウドアプリケーションテスト実現ガイドライン
 
-## 目次
-1. [はじめに](#はじめに)
-2. [テスト戦略の概要](#テスト戦略の概要)
-3. [フロントエンドテスト戦略：テスティングトロフィー](#フロントエンドテスト戦略テスティングトロフィー)
-4. [バックエンドテスト戦略：テストピラミッド](#バックエンドテスト戦略テストピラミッド)
-5. [テストタイプの比較](#テストタイプの比較)
-6. [各テストの詳細](#各テストの詳細)
-7. [テストカバレッジ目標](#テストカバレッジ目標)
-8. [テスト環境](#テスト環境)
-9. [CI/CDパイプラインとの統合](#cicdパイプラインとの統合)
-10. [ツールとフレームワーク](#ツールとフレームワーク)
+## 1. テスト戦略の概要
 
-## はじめに
+### 1.1 テストピラミッドとテスティングトロフィー
 
-本ドキュメントは、クラウドアプリの品質保証と効率的な開発スピードを確保するためのテスト戦略を定義するものです。
+バックエンドのテストは以下定義で実施：
 
-### 目的
+1. **単体テスト（Unit Tests）**
+   - 最も数が多く、実行時間が短いテスト
+   - コンポーネントやメソッドを独立して検証
+   - モックやスタブを活用して依存関係を分離
 
-- 高品質なソフトウェアの提供を確実にする
-- バグの早期発見と修正を促進する
-- 開発速度と品質のバランスを最適化する
-- テストプロセスの標準化と透明性を確保する
+2. **統合テスト（Integration Tests）**
+   - 複数のコンポーネントの相互作用を検証
 
-## テスト戦略の概要
-
-本ドキュメントでは、フロントエンドとバックエンドで異なるテスト戦略を採用します。これは各領域の特性と課題に最適に対応するためです。
-
-### テスト戦略選定の根拠
-
-フロントエンドとバックエンドでは、コードの特性、開発サイクル、テストの目的が異なるため、それぞれに最適化されたテスト戦略を採用しています。
-
-#### フロントエンドでテスティングトロフィーを採用する理由
-
-1. **ユーザー体験の重要性**：フロントエンドはユーザーが直接操作する部分であり、コンポーネント間の相互作用が重要です。インテグレーションテストを重視することで、ユーザー体験に直結する問題を効率的に発見できます。
-
-2. **UI変更の頻度**：フロントエンドは頻繁に変更される傾向があり、細かすぎるユニットテストは保守コストが高くなりがちです。インテグレーションテストは変更に対する耐性が高く、より少ないテストで広範囲をカバーできます。
-
-3. **静的解析の有効性**：TypeScriptなどの型システムやESLintなどの静的解析ツールが発達しており、多くのバグをコーディング段階で検出できます。これにより、ユニットテストの一部を代替できます。
-
-4. **実装よりも振る舞いの重視**：フロントエンドでは内部実装よりも、ユーザーから見た振る舞いが重要です。インテグレーションテストは実装の詳細に依存せず、振る舞いに焦点を当てたテストが可能です。
-
-#### バックエンドでテストピラミッドを採用する理由
-
-1. **ビジネスロジックの複雑性**：バックエンドにはビジネスロジックが集中しており、細かい機能単位でのテストが重要です。ユニットテストを多く実施することで、ロジックのバグを効率的に検出できます。
-
-2. **パフォーマンスと安定性の要求**：バックエンドはシステム全体のパフォーマンスと安定性に大きく影響します。ユニットテストは実行が高速で安定しているため、頻繁な実行に適しています。
-
-### フロントエンドとバックエンドのテスト戦略
-
-- **フロントエンド**：テスティングトロフィー
-  - インテグレーションテストを中心に据える
-  - 静的解析を基盤として重視
-  - E2Eテストは厳選して少数実施
-
-- **バックエンド**：テストピラミッド
-  - ユニットテストを最大量で実施
-  - 上位のテストほど数を減らす
-  - 実行速度と安定性を重視
-
-## フロントエンドテスト戦略：テスティングトロフィー
-
-フロントエンドでは、以下の比率でテストを実施します：
-
-- 静的解析：100%（基盤）
-- ユニットテスト：50%/40%（最小限）
-- インテグレーションテスト：80%/70%（重点）
-- E2Eテスト：20%/15%（重要フローのみ）
-
-## バックエンドテスト戦略：テストピラミッド
-
-バックエンドでは、以下の比率でテストを実施します：
-
-- ユニットテスト：85%/75%（基盤）
-- インテグレーションテスト：60%/50%（中間）
-- APIテスト：40%/30%（最上位）
-
-### テストカバレッジ目標
-
-| コンポーネント | テストタイプ | ラインカバレッジ目標 | 分岐カバレッジ目標 | 主な対象 |
-|------------|----------|--------------|--------------|-------|
-| **フロントエンド** | 静的解析 | 100% | N/A | • TypeScript型チェック<br>• ESLint/Prettier<br>• セキュリティスキャン |
-| **フロントエンド** | ユニットテスト | 50% | 40% | • ユーティリティ関数<br>• 単純なコンポーネント<br>• バリデーション処理 |
-| **フロントエンド** | インテグレーションテスト | 80% | 70% | • タスクCRUD操作フロー<br>• コンポーネント間連携<br>• 状態管理（Redux/Context）<br>• APIモックとの連携 |
-| **フロントエンド** | E2Eテスト | 20% | 15% | • クリティカルユーザーフロー<br>• 主要な業務フロー |
-| **バックエンド** | ユニットテスト | 85% | 75% | • タスクサービス<br>• ユーザー管理<br>• ビジネスロジック |
-| **バックエンド** | インテグレーションテスト | 60% | 50% | • DBアクセス処理<br>• トランザクション管理 |
-| **バックエンド** | APIテスト | 40% | 30% | • エンドポイントテスト<br>• 外部システム連携 |
-
-### 重要機能のテスト戦略
-
-1. **API通信処理**
-   - 100%のカバレッジ必須
-   - エラーケースの網羅的テスト
-   - パフォーマンステストの実施
-
-2. **タスク状態管理**
-   - 100%のカバレッジ必須
-   - 同時編集のテスト
-   - データ整合性の検証
-
-3. **認証・認可**
-   - 100%のカバレッジ必須
-   - セキュリティテストの実施
-   - 境界値テストの徹底
-
-## テストタイプの比較
-
-フロントエンドとバックエンドにおける各テストレベルの特性と違いを以下の表で比較します。
-
-
-| テストタイプ | フロントエンド | バックエンド | 
-|------------|--------------|------------|
-| **静的解析** | • コードの書き方の問題を自動検出<br>• タイプミスや構文エラーをチェック<br>• 利用しているOSSの脆弱性をチェック<br>• 脆弱なコードをチェック | • コードの書き方の問題を自動検出<br>• タイプミスや構文エラーをチェック<br>• 利用しているOSSの脆弱性をチェック<br>• 脆弱なコードをチェック |
-| **ユニットテスト** | • コンポーネントが正しく表示できるか確認<br>• ボタンクリックなどの反応を確認<br>•外部関数との連携はモックを活用 | • 個別の処理機能が正しく動くか確認<br>• ビジネスロジックが想定通りか確認<br>•外部関数との連携はモックを活用 |
-| **インテグレーションテスト** | • 複数コンポーネントの連携を確認<br>• フォームの入力から送信までの流れを確認<br>• APIのモックとの連携を確認 ||
-| **APIテスト** | | • エンドポイントの機能確認<br>• リクエストバリデーション<br>• レスポンス形式の確認<br>• エラーハンドリングの確認<br>• 認証/認可の確認 |
-| **E2Eテスト** | • 実際のブラウザでの操作を確認<br>• 画面からサーバーまでの連携を確認<br>• 一括処理の全体実行を確認<br>• 外部システムとの実際の連携を確認 | |
-
-### テストの実行特性比較
-
-各テストタイプの実行特性を比較します。
-
-| 特性 | 静的解析 | ユニットテスト | インテグレーションテスト+APIテスト | E2Eテスト |
-|-----|---------|-------------|-------------------|---------|
-| **実行速度** | ◎超高速（数ミリ秒） | 〇とても速い（1秒以内） | △普通（数秒〜数十秒） | ×遅い（数十秒〜数分） |
-| **安定性** | ◎完全に安定 | 〇とても安定している | △比較的安定している | ×不安定になりやすい |
-| **作成コストの低さ** | ◎自動生成可能 | ×困難 | △やや困難 | 〇簡単 |
-| **保守の手間** | ◎ほとんど不要 | 〇少ない | △普通 | ×多い |
-| **見つかるバグ** | コード品質の問題<br>セキュリティの問題<br>パフォーマンスの問題 | 個別画面・機能の問題 | ユーザー目線の画面・機能連携の問題 | クリティカルなユーザーフローの問題 |
-| **実行タイミング** | PR作成時 | PR作成時 | PR作成時 | 評価環境デプロイ時 |
-
-## 各テストの詳細
-
-### 静的解析
-
-**定義**：
-コードを実行せずに、コードの品質、セキュリティ、パフォーマンスの問題を検出するテスト。
-
-**目的**：
-- コードの品質問題を早期に発見
-- セキュリティリスクの事前検出
-- パフォーマンスボトルネックの特定
-- コーディング規約の遵守確認
-
-**実施方法**：
-- リンター（ESLint, StyleCop）によるコード解析
-- セキュリティスキャナー（Snyk）による脆弱性チェック
-- コードフォーマッター（Prettier）による一貫性確保
-
-### ユニットテスト
-
-**定義**：
-単一の機能単位（関数、メソッド、コンポーネント）を分離してテストするもの。外部依存性は可能な限りモック/スタブする。
-
-**目的**：
-- 個々のコード単位が期待通りに動作することを確認
-- コードの変更による影響を迅速に検出
-- 開発者のフィードバックループを短縮
-
-**フロントエンドの例**：
-- ユーティリティ関数のテスト
-- 単一のReactコンポーネントのレンダリングテスト
-- イベントハンドラの動作確認
-
-**バックエンドの例**：
-- 個々のサービスメソッドのテスト
-- データ変換ロジックのテスト
-- バリデーションロジックのテスト
-
-**モックの効果的な使用**：
-
-モックは外部依存性を分離し、テストの信頼性と再現性を高めるために使用します。以下のガイドラインに従ってモックを活用します：
-
-1. **モック対象の明確化**：
-   - 外部API呼び出し
-   - データベースアクセス
-   - ファイルシステム操作
-   - 時間依存のロジック
-   - 外部サービスとの連携
-
-2. **フロントエンドでのモック**：
-   - APIリクエストは `jest.mock` または `msw` を使用
-   - コンテキストやReduxストアは浅いモックで代替
-   - ブラウザAPIは `jest-environment-jsdom` で模倣
-   - イベントハンドラは `jest.fn()` でスパイ
-
-3. **バックエンドでのモック**：
-   - リポジトリ層はインメモリ実装で代替
-   - 外部APIは `Moq` などでモック
-   - データベースは特定のテスト用インスタンスや `in-memory-db` を使用
-
-4. **モックの粒度**：
-   - 単一の関数やメソッドはスタブまたはスパイで対応
-   - 複雑なサービスは部分的にモック
-   - 外部システム全体はモックサーバーで代替
-
-5. **モックの避けるべきケース**：
-   - テスト対象のコア機能そのもの
-   - 純粋関数（副作用のない関数）
-   - 単純なデータ構造
-
-### インテグレーションテスト
-
-**定義**：
-複数のコンポーネントや機能が連携して正しく動作するかを検証するテスト。
-
-**目的**：
-- コンポーネント間の連携が期待通りに動作することを確認
-- ユーザー体験に直結する機能の整合性を検証
-- 開発者のフィードバックループを短縮
-
-**フロントエンドの例**：
-- フォーム入力と送信の一連の流れ
-- APIモックを使用したデータフェッチングのテスト
-- 複数コンポーネントの連携動作確認
-
-**フロントエンドのAPI連携モック手法**：
-
-1. **MSW (Mock Service Worker)の活用**：
-   - ブラウザとサーバー両方で一貫したモック
-   - 実際のネットワークリクエストをインターセプト
-   - リアルなAPIレスポンスをシミュレート
-
-2. **テストデータの準備**：
-   - 成功・失敗両方のレスポンスを用意
-   - エッジケース（空配列、大量データなど）を考慮
-   - レスポンス遅延のシミュレート
-
-3. **テストケース設計**：
-   - データ取得中のローディング状態確認
-   - エラー発生時のフォールバックUI確認
-   - 再試行機能のテスト
-   - キャッシュ機能のテスト
-
-4. **実装例**：
-   ```javascript
-   // MSW設定例
-   import { rest } from 'msw';
-   import { setupServer } from 'msw/node';
-
-   const server = setupServer(
-     rest.get('/api/users', (req, res, ctx) => {
-       return res(ctx.json([{ id: 1, name: 'Test User' }]));
-     }),
-     rest.post('/api/login', (req, res, ctx) => {
-       return res(ctx.status(200), ctx.json({ token: 'test-token' }));
-     })
-   );
-
-   beforeAll(() => server.listen());
-   afterEach(() => server.resetHandlers());
-   afterAll(() => server.close());
-   ```
-
-### APIテスト
-
-**定義**：
-APIのエンドポイントが期待通りに動作するかを検証するテスト。
-
-**目的**：
-- APIの機能が仕様通りに動作することを確認
-- リクエスト/レスポンスの形式が正しいことを確認
-- エラーハンドリングが適切に行われることを確認
-
-**バックエンドの例**：
-- エンドポイントの機能確認
-- リクエストバリデーション
-- レスポンス形式の確認
-- エラーハンドリングの確認
-- 認証/認可の確認
-- パフォーマンスの確認
-
-### E2Eテスト
-
-**定義**：
-実際のクラウド環境で、ブラウザを起動しシステム全体の動作を検証するテスト。
-
-**目的**：
-- エンドユーザーの視点からシステムの機能を検証
-- クリティカルなユーザーフローが正常に動作することを確認
-- 本番環境に近い条件でのシステムの動作を検証
-
-**実施項目**：
-- ログイン〜商品購入までの一連のフロー
-- 実際のブラウザを使用したナビゲーションのテスト
-- フォーム入力からバックエンドまでの完全なデータフロー
-- 外部システムとの連携確認
-
-## テスト環境
-
-テスト実行環境を明確に定義し、各環境の目的と特性を以下に記載します。
-
-### 環境の種類と目的
-
-| 環境 | 主な目的 | 特性 | 主なテストタイプ |
-|-----|---------|------|--------------|
-| **ローカル開発環境** | 開発者の個人作業環境 | • 開発者のPC上<br>• 即時フィードバック<br>• モックを多用 | • 静的解析<br>• ユニットテスト<br>• インテグレーションテスト |
-| **CI環境** | 自動テスト実行環境 | • クラウド上の一時環境<br>• PR毎に生成・破棄<br>• 独立性の確保 | • 静的解析<br>• ユニットテスト<br>• インテグレーションテスト<br>• APIテスト |
-| **テスト環境** | 結合テスト用環境 | • 安定したクラウド環境<br>• 本番に近いインフラ<br>• テスト用データセット | • E2Eテスト<br>• 手動テスト<br> |
-| **本番環境** | サービス提供環境 | • 実ユーザーが使用 ||
-
-## CI/CDパイプラインとの統合
-
-### パイプラインにおけるテスト実行順序
-
-1. 静的解析（PR作成時）
-   - コード品質チェック
-   - セキュリティスキャン
-   - パフォーマンス分析
-
-2. ユニットテスト（PR作成時）
-   - フロントエンドコンポーネントテスト
-   - バックエンドビジネスロジックテスト
-   - コードカバレッジ確認
-
-3. インテグレーションテスト+APIテスト（PR作成時）
-   - フロントエンド：コンポーネント間連携テスト
-   - バックエンド：APIエンドポイントテスト
-   - リクエスト/レスポンス形式確認
-
-4. E2Eテスト（デプロイ後）
-   - クリティカルパスの動作確認
-   - 外部システム連携確認
-   - パフォーマンス検証
-
-### 品質ゲート
-
-| ステージ | 品質ゲート条件 | 実施タイミング |
-|---------|-------------|------------|
-| PR作成 | • 静的解析パス<br>• ユニットテスト100%パス<br>• コードカバレッジ閾値達成<br>• インテグレーションテストパス<br>• APIテストパス | PR作成時 |
-| デプロイ（テスト環境） | • 自動E2Eテストパス<br>  • 手動E2Eテストパス<br>| デプロイ前 |
-| デプロイ（本番環境） | | デプロイ前 |
-
-## ツールとフレームワーク
-
-### フロントエンド
-
-- **静的解析**: ESLint, Prettier, Snyk
-- **ユニットテスト**: Jest
-- **インテグレーションテスト**: Jest, React Testing Library
-- **E2Eテスト**: Playwright
-
-### バックエンド
-
-- **静的解析**: StyleCop, Snyk
-- **ユニットテスト**: XUnit
-- **APIテスト**: Postman
+3. **API/契約テスト**
+   - バックエンドAPIの動作と契約を検証
+   - バックエンドの連携を保証
+
+フロントエンドのテストは以下定義で実施：
+
+1. **静的テスト（Static Tests）**
+   - TypeScriptの型チェック
+   - ESLintによるコード品質チェック
+   - スタイルガイドの遵守確認
+
+2. **単体テスト（Unit Tests）**
+   - 個々のコンポーネントや関数を分離してテスト
+   - 外部依存をモック化
+   - `.test.tsx` ファイルで実装
+   - 子コンポーネントはモック化し、対象コンポーネントの責務のみをテスト
+
+3. **統合テスト（Integration Tests）**
+   - 複数のコンポーネントが連携する部分をテスト
+   - 実際のレンダリングやユーザー操作をシミュレーション
+   - `.spec.tsx` ファイルで実装
+   - 実際のコンポーネント階層を使用し、状態管理や複数コンポーネント間の連携をテスト
+
+フロントエンドとバックエンド一気通貫のテストは以下定義で実施：
+
+1. **E2Eテスト（End-to-End Tests）**
+   - 実際のブラウザでユーザーフローを検証
+   - バックエンドと連携した完全な機能テスト
+
+### 1.2 テストカバレッジ目標
+
+
+| コンポーネント | テストタイプ | ラインカバレッジ目標 | 分岐カバレッジ目標 |
+|------------|----------|--------------|--------------|
+| **フロントエンド** | 静的解析 | 100% | N/A |
+| **フロントエンド** | ユニットテスト | 50% | 40% |
+| **フロントエンド** | インテグレーションテスト | 80% | 70% |
+| **バックエンド** | ユニットテスト | 85% | 75% |
+| **バックエンド** | インテグレーションテスト | 60% | 50% |
+| **バックエンド** | APIテスト | 40% | 30% |
+| **フロントエンド+バックエンド** | E2Eテスト | 20% | 15% |
+
+### 重要機能のテストカバレッジ目標（100%必須）
+
+| 機能カテゴリ | テストタイプ | ラインカバレッジ目標 | 分岐カバレッジ目標 | 対象ファイル |
+|------------|----------|--------------|--------------|------------|
+| **API通信処理** | 全テストタイプ | 100% | 100% ||
+
+
+### 1.3 テスト自動化の原則
+
+- テストは自己完結し、他のテストに依存しないこと
+- テストは再現性が高く、環境に依存しないこと
+- テストは読みやすく、メンテナンスが容易であること
+- 失敗時に明確なエラーメッセージを提供すること
+
+## 2. フロントエンドテスト
+
+### 2.1 単体テスト (Jest + React Testing Library)
+
+フロントエンドの単体テストは、個々のコンポーネントを分離してテストします。外部依存はすべてモック化し、コンポーネントの内部ロジックと表示のみを検証します。ファイル名は `.test.tsx` とします。
+
+単体テストの例（`TaskCard.test.tsx`）：
+
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import '@testing-library/jest-dom';
+import TaskCard from '@/components/TaskCard';
+import { TaskItem, TaskStatus } from '@/types/task';
+
+// コンポーネントに必要な最小限のpropsのみを渡す単体テスト
+describe('TaskCard', () => {
+  // モックハンドラー
+  const mockHandlers = {
+    onEdit: jest.fn(),
+    onDelete: jest.fn(),
+    onStatusChange: jest.fn(),
+  };
+
+  // テスト用のタスク
+  const mockTask: TaskItem = {
+    id: 1,
+    title: 'テストタスク',
+    description: 'タスクの説明文',
+    status: TaskStatus.NotStarted,
+    dueDate: '2023-12-31',
+    assignedTo: 'テストユーザー',
+  };
+
+  it('タスクの基本情報が正しく表示される', () => {
+    render(
+      <TaskCard
+        task={mockTask}
+        onEdit={mockHandlers.onEdit}
+        onDelete={mockHandlers.onDelete}
+        onStatusChange={mockHandlers.onStatusChange}
+      />
+    );
+
+    // タイトルが表示されることを確認
+    expect(screen.getByText('テストタスク')).toBeInTheDocument();
+    
+    // 説明が表示されることを確認
+    expect(screen.getByText('タスクの説明文')).toBeInTheDocument();
+  });
+
+  it('編集ボタンをクリックすると、onEdit関数が呼ばれる', () => {
+    render(
+      <TaskCard
+        task={mockTask}
+        onEdit={mockHandlers.onEdit}
+        onDelete={mockHandlers.onDelete}
+        onStatusChange={mockHandlers.onStatusChange}
+      />
+    );
+
+    // ボタンをクリック
+    const editButton = screen.getByTestId(`edit-button-${mockTask.id}`);
+    fireEvent.click(editButton);
+    
+    // onEdit関数が正しく呼び出されたか確認
+    expect(mockHandlers.onEdit).toHaveBeenCalledWith(mockTask);
+  });
+});
+```
+
+複合コンポーネントの単体テスト例（`TaskList.test.tsx`）：
+
+```typescript
+// TaskCardコンポーネントをモック化
+jest.mock('@/components/TaskCard', () => {
+  const actual = jest.requireActual('@/types/task');
+  
+  return {
+    __esModule: true,
+    default: jest.fn(({ task }) => (
+      <div data-testid={`mocked-task-card-${task.id}`}>{task.title}</div>
+    )),
+    statusColors: {
+      [actual.TaskStatus.NotStarted]: 'mocked-blue',
+      [actual.TaskStatus.InProgress]: 'mocked-yellow',
+      [actual.TaskStatus.Completed]: 'mocked-green',
+    },
+    statusLabels: {
+      [actual.TaskStatus.NotStarted]: '未着手',
+      [actual.TaskStatus.InProgress]: '進行中',
+      [actual.TaskStatus.Completed]: '完了',
+    },
+  };
+});
+
+describe('TaskList Unit Tests', () => {
+  // ...
+
+  it('各ステータスごとにタスクが表示される', () => {
+    render(<TaskList tasks={mockTasks} loading={false} ... />);
+
+    // 各ステータスのセクションが表示されていることを確認
+    expect(screen.getByRole('heading', { name: '未着手' })).toBeInTheDocument();
+    
+    // モックされたTaskCardがレンダリングされているか確認
+    expect(screen.getByTestId('mocked-task-card-1')).toBeInTheDocument();
+  });
+});
+```
+
+#### 単体テストのポイント
+
+- **対象**: 単一コンポーネントのみ
+- **外部依存**: すべてモック化（子コンポーネント含む）
+- **検証対象**: props、イベントハンドラー、表示されるテキスト
+- **ファイル名**: `.test.tsx`
+- **テストの粒度**: 細かい機能を一つずつテスト
+- **セレクタ**: data-testidやrole属性を使用して要素を特定
+
+### 2.2 統合テスト
+
+フロントエンドの統合テストは、複数のコンポーネントが連携する様子や、実際のユーザーの操作フローをテストします。複雑な相互作用、状態管理、イベント処理などを検証します。ファイル名は `.spec.tsx` とします。
+
+統合テストの例（`TaskBoardIntegration.spec.tsx`）：
+
+```typescript
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { useState } from 'react';
+import TaskList from '@/components/TaskList';
+import TaskForm from '@/components/TaskForm';
+
+// 統合テスト用のTaskBoardコンポーネントを作成
+function TaskBoard() {
+  const [tasks, setTasks] = useState<TaskItem[]>([
+    {
+      id: 1,
+      title: '初期タスク',
+      description: '初期タスクの説明',
+      status: TaskStatus.NotStarted,
+      dueDate: '2024-12-31',
+      assignedTo: 'テストユーザー',
+    },
+  ]);
+  
+  const [editingTask, setEditingTask] = useState<TaskItem | null>(null);
+  const [showForm, setShowForm] = useState(false);
+
+  // イベントハンドラー関数...
+
+  return (
+    <div>
+      <button onClick={handleNewTask} data-testid="new-task-button">
+        新規タスク作成
+      </button>
+      
+      {showForm && (
+        <TaskForm 
+          task={editingTask || undefined}
+          onSubmit={handleSubmit}
+          onCancel={handleCancel}
+        />
+      )}
+      
+      <TaskList
+        tasks={tasks}
+        loading={false}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onStatusChange={handleStatusChange}
+      />
+    </div>
+  );
+}
+
+describe('TaskBoard Integration Tests', () => {
+  it('完全なタスク追加フローが動作する', async () => {
+    render(<TaskBoard />);
+    
+    // 初期状態を確認
+    expect(screen.getByText('初期タスク')).toBeInTheDocument();
+    
+    // 新規タスク作成ボタンをクリック
+    fireEvent.click(screen.getByTestId('new-task-button'));
+    
+    // フォームに値を入力
+    fireEvent.change(screen.getByLabelText('タイトル'), { 
+      target: { value: '新しいタスク' } 
+    });
+    
+    // フォームを送信
+    fireEvent.click(screen.getByText('保存'));
+    
+    // 新しいタスクが表示されることを確認
+    await waitFor(() => {
+      expect(screen.getByText('新しいタスク')).toBeInTheDocument();
+    });
+  });
+  
+  it('タスクのステータス変更が動作する', async () => {
+    render(<TaskBoard />);
+    
+    // 初期タスクのステータスを変更
+    const statusSelect = screen.getByTestId('status-select-1');
+    fireEvent.change(statusSelect, { target: { value: TaskStatus.InProgress } });
+    
+    // 未着手のカラムにタスクがなくなることを確認
+    const notStartedHeading = screen.getByRole('heading', { name: '未着手' });
+    const notStartedColumn = notStartedHeading.closest('div')?.parentElement;
+    expect(notStartedColumn).not.toContainElement(screen.getByText('初期タスク'));
+    
+    // 進行中のカラムにタスクが移動することを確認
+    const inProgressHeading = screen.getByRole('heading', { name: '進行中' });
+    const inProgressColumn = inProgressHeading.closest('div')?.parentElement;
+    expect(inProgressColumn).toContainElement(screen.getByText('初期タスク'));
+  });
+});
+```
+
+#### 統合テストのポイント
+
+- **対象**: 複数のコンポーネントとその連携
+- **外部依存**: 実際のコンポーネントを使用（モックしない）
+- **検証対象**: ユーザーフロー、コンポーネント間の連携、状態管理
+- **ファイル名**: `.spec.tsx`
+- **テストの粒度**: ひとつのユーザーストーリーを完結させる
+- **非同期処理**: waitForやactを使用して状態変更を適切に待機
+
+### 2.3 コンポーネント構造の設計とテスト戦略
+
+適切なテスト戦略を実現するためには、コンポーネント設計が重要です。以下の原則に従ってコンポーネントを設計することで、テスト効率が向上します：
+
+1. **単一責任の原則**: 各コンポーネントは1つの責任のみを持つ
+2. **コンポーネントの階層化**: 
+   - 小さな純粋コンポーネント（Presentational）
+   - 中間の複合コンポーネント
+   - 大きなコンテナコンポーネント（Container）
+
+例えば、タスク管理アプリでは以下のように分割しました：
+
+- **TaskCard**: 単一のタスクカードの表示と操作（純粋コンポーネント）
+- **TaskList**: 複数のタスクカードを管理・表示（複合コンポーネント）
+- **TaskBoard**: タスクリストとフォームを組み合わせ、状態管理（コンテナ）
+
+この設計により、以下のテスト戦略が可能になります：
+
+1. **単体テスト**:
+   - TaskCard: プロップスの受け取りと表示、イベント発火
+   - TaskList: TaskCardのレンダリング（TaskCardをモック）
+
+2. **統合テスト**:
+   - TaskBoard: 実際のコンポーネントを使用し、ユーザーフロー全体
+
+## 3. バックエンドテスト
+
+### 3.1 単体テスト (xUnit)
+
+バックエンドの単体テストは、コントローラー、サービス、リポジトリなどのクラスを個別にテストします。外部依存はすべてモック化し、対象クラスの動作のみを検証します。
+
+現在の実装例（`UnitTests/TaskControllerTests.cs`）：
+
+```csharp
+using Xunit;
+using Moq;
+using TaskManagement.API.Controllers;
+using TaskManagement.API.Models;
+using TaskManagement.API.Services;
+using Microsoft.AspNetCore.Mvc;
+// ...
+
+public class TaskControllerTests
+{
+    private readonly Mock<ITaskService> _mockTaskService;
+    private readonly TaskController _controller;
+
+    public TaskControllerTests()
+    {
+        _mockTaskService = new Mock<ITaskService>();
+        _controller = new TaskController(_mockTaskService.Object);
+    }
+
+    [Fact]
+    public async Task GetAll_ReturnsOkResult()
+    {
+        // Arrange
+        var tasks = new List<TaskItem> { /* テスト用データ */ };
+        _mockTaskService.Setup(s => s.GetAllTasksAsync())
+            .ReturnsAsync(tasks);
+
+        // Act
+        var result = await _controller.GetAll();
+
+        // Assert
+        var okResult = Assert.IsType<OkObjectResult>(result.Result);
+        var returnValue = Assert.IsType<List<TaskItem>>(okResult.Value);
+        Assert.Equal(2, returnValue.Count);
+    }
+
+    [Fact]
+    public async Task GetById_NonExistentTask_ReturnsNotFound()
+    {
+        // Arrange
+        _mockTaskService.Setup(s => s.GetTaskByIdAsync(999))
+            .ReturnsAsync((TaskItem?)null);
+
+        // Act
+        var result = await _controller.GetById(999);
+
+        // Assert
+        Assert.IsType<NotFoundResult>(result.Result);
+    }
+
+    // 例外処理のテスト
+    [Fact]
+    public async Task Update_ServiceThrowsArgumentException_ReturnsBadRequest()
+    {
+        // Arrange
+        _mockTaskService.Setup(s => s.UpdateTaskAsync(It.IsAny<TaskItem>()))
+            .ThrowsAsync(new ArgumentException("無効なデータ"));
+
+        // Act & Assert
+        // ...
+    }
+}
+```
+
+#### バックエンド単体テストのポイント
+
+- **依存サービスのモック化**: DBアクセスなどの外部依存をモック
+- **エラーケースの検証**: 例外処理や境界条件のテスト
+- **HTTP応答の検証**: ステータスコードと返却値の検証
+- **テストデータの適切な設定**: テストごとに適切なデータを準備
+- **入力検証のテスト**: バリデーションエラーの適切な処理
+
+### 3.2 統合テスト
+
+バックエンドの統合テストでは、実際のアプリケーション構成を使用して、複数のコンポーネント（コントローラー、サービス、DBアクセス）が連携する様子をテストします。実際のHTTPリクエスト/レスポンスを使用します。
+
+現在の実装例（`IntegrationTests/TaskControllerTests.cs`）：
+
+```csharp
+public class TaskControllerTests : IClassFixture<CustomWebApplicationFactory>
+{
+    private readonly HttpClient _client;
+    private readonly JsonSerializerOptions _jsonOptions;
+
+    public TaskControllerTests(CustomWebApplicationFactory factory)
+    {
+        _client = factory.CreateClient();
+        // ...
+    }
+
+    [Fact]
+    public async Task GetById_WithValidId_ReturnsTask()
+    {
+        // Arrange - まず新しいタスクを作成
+        var task = new TaskItem { /* ... */ };
+        var createResponse = await _client.PostAsync(
+            "/api/task", 
+            CreateJsonContent(task));
+        
+        // レスポンスからIDを取得
+        var jsonString = await createResponse.Content.ReadAsStringAsync();
+        var responseDict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonString);
+        var createdTaskId = responseDict["id"].GetInt32();
+
+        // Act
+        var response = await _client.GetAsync($"/api/task/{createdTaskId}");
+
+        // Assert
+        response.EnsureSuccessStatusCode();
+        // ...レスポンスの検証...
+    }
+}
+```
+
+#### バックエンド統合テストのポイント
+
+- **実際のアプリケーション構成を使用**: より実環境に近いテスト
+- **インメモリデータベースの活用**: テスト用の隔離されたDB環境
+- **エンドツーエンドのリクエスト**: 実際のHTTPリクエスト/レスポンスを使用
+- **テストデータの独立性**: テスト間の影響を排除
+
+### 3.3 API/契約テスト (Postman)
+
+Postmanを使ったAPIテスト例：
+
+```json
+{
+  "name": "新しいタスクを作成",
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "exec": [
+          "pm.test(\"ステータスコードは201である\", function () {",
+          "    pm.response.to.have.status(201);",
+          "});",
+          "",
+          "pm.test(\"レスポンスに新しいタスクIDが含まれている\", function () {",
+          "    var jsonData = pm.response.json();",
+          "    pm.expect(jsonData.id).to.be.a('number');",
+          "    pm.variables.set(\"createdTaskId\", jsonData.id);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "request": {
+    "method": "POST",
+    "header": [
+      {
+        "key": "Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "body": {
+      "mode": "raw",
+      "raw": "{\n  \"title\": \"新しいタスク\",\n  \"description\": \"...\",\n  \"status\": 0,\n  \"dueDate\": \"2023-12-31T00:00:00\",\n  \"assignedTo\": \"ユーザー名\"\n}"
+    },
+    "url": {
+      "raw": "{{baseUrl}}/api/task"
+    }
+  }
+}
+```
+
+#### APIテストのポイント
+
+- **環境変数の活用**: 環境ごとの設定値を変数化
+- **テストチェーンの構築**: テスト間でデータを連携（作成→取得→更新→削除）
+- **レスポンスの詳細検証**: ステータスコード、データ構造、値の検証
+
+## 4. E2Eテスト (Playwright)
+
+E2Eテスト例（`task-management.spec.ts`）：
+
+```typescript
+import { test, expect } from '@playwright/test';
+
+// すべてのテストで共有するタスク名とタイムスタンプ
+const timestamp = Date.now();
+const SHARED_TASK_TITLE = `E2Eテスト用タスク ${timestamp}`;
+
+test.describe('タスク管理アプリケーションのE2Eテスト', () => {
+  test('タスク管理の基本操作フロー（作成→編集→ステータス変更→削除）', async ({ page }) => {
+    // アプリケーションにアクセス
+    await page.goto('/');
+    
+    // ステップ1: タスクの作成
+    await page.getByText('新規タスク').click();
+    await page.fill('#title', SHARED_TASK_TITLE);
+    // ...他のフィールドの入力...
+    await page.getByText('保存').click();
+    
+    // タスクが表示されることを確認
+    await expect(page.getByText(SHARED_TASK_TITLE)).toBeVisible({timeout: 10000});
+    
+    // ステップ2: タスクの編集
+    const taskCard = page.getByText(SHARED_TASK_TITLE).locator('xpath=ancestor::div[contains(@class, "bg-white")]');
+    await taskCard.getByRole('button', { name: /編集/ }).click();
+    
+    // 内容を更新
+    const updatedDescription = '更新されたタスク説明文';
+    await page.fill('#description', updatedDescription);
+    await page.getByText('保存').click();
+    
+    // ステップ3: ステータス変更
+    // ...
+    
+    // ステップ4: タスクの削除
+    // ...
+  });
+});
+```
+
+### E2Eテストのポイント
+
+- **ユーザーフローの網羅**: 重要なユースケースを完全に再現
+- **ロバストなセレクタの使用**: data-testid、ロール、テキストなど複数の手段を用意
+- **タイムアウトの適切な設定**: 環境による処理時間の違いに対応
+- **スクリーンショットの活用**: 問題発生時の状態を保存
+- **テストデータの一意性**: 重複を避けるためにタイムスタンプなどを活用
+- **フォールバック機構**: セレクタ失敗時の代替手段を用意
+- **エラーハンドリング**: 問題発生時に適切な情報を提供
+
+## 5. テスト環境と自動化
+
+### 5.1 環境構築
+
+- **開発環境**: 自動化テストをローカルで実行可能な構成
+- **CI環境**: パイプラインでの自動テスト実行
+- **ステージング環境**: 本番に近い環境でのE2Eテスト
+
+### 5.2 CI/CDパイプラインへの統合
+
+1. プルリクエスト時に単体テストと統合テストを実行
+2. デプロイ前の全テスト実行とリリース判断
+
+### 5.3 テスト自動化のベストプラクティス
+
+- **並列実行**: テスト実行時間の短縮
+- **テストデータの隔離**: テスト間の干渉を防止
+- **テスト結果のレポート**: 視覚的なフィードバック
+- **テストカバレッジの測定**: テスト網羅度の評価
+
+## 6. まとめと今後の改善計画
+
+### 6.1 テスト戦略の主要ポイント
+
+1. **テストの階層化**: 単体→統合→E2Eのピラミッド構造
+2. **適切なモック化**: 単体テストではモック、統合テストでは実際のコンポーネント
+3. **ファイル命名規則**: `.test.tsx`は単体テスト、`.spec.tsx`は統合テスト
+4. **テスト対象の明確化**: 単体テストは個々のコンポーネント、統合テストはユーザーフロー
+
+### 6.2 今後の改善計画
+
+1. **テストカバレッジの向上**: 特に重要なビジネスロジックのカバレッジを100%に
+2. **ビジュアルリグレッションテストの導入**: Storybookとの連携
+3. **パフォーマンステストの追加**: ロード時間やレンダリング効率の測定
+4. **アクセシビリティテストの強化**: WAI-ARIAガイドラインへの準拠チェック
+5. **モバイル対応テストの拡充**: レスポンシブデザインの検証強化
