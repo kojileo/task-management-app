@@ -7,6 +7,7 @@ namespace TaskManagement.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [AutoValidateAntiforgeryToken]
     public class TaskController : ControllerBase
     {
         private readonly ITaskService _taskService;
