@@ -1,11 +1,10 @@
 # Azure Pipelines YAML file
 
-trigger: none # PRトリガーのみを使用するため、CIトリガーは無効化
-
-pr:
+trigger:
   branches:
     include:
       - develop # developブランチへのプルリクエストをトリガー
+pr: none # PRトリガーのみを使用するため、CIトリガーは無効化
 
 pool:
   vmImage: 'ubuntu-latest' # MicrosoftホステッドエージェントのUbuntu最新版を使用
@@ -13,87 +12,30 @@ pool:
 variables:
   # --- 以下の変数をAzure DevOpsのパイプライン設定で定義してください ---
 
-  # 1. セキュリティチェック専用リポジトリのHTTPS URL
-  # 例: 'https://dev.azure.com/YOUR_ORG_NAME/YOUR_PROJECT_NAME/_git/YOUR_SECURITY_REPO_NAME'
-  # このURLにはPATを含めないでください。認証は後述のPAT変数で行います。
-  SECURITY_REPO_URL: '$(YourSecurityRepoUrl)' # パイプライン変数で設定してください
-
-  # 2. セキュリティチェック専用リポジトリへの書き込み権限を持つPAT (Personal Access Token)
-  # Azure DevOpsの「Variables」で 'SECURITY_REPO_PAT' という名前で、値をPATにして「Keep this value secret」にチェックを入れてください。
-  # このPATは、セキュリティチェック専用リポジトリに対する「Code > Read & write」権限が必要です。
-  # SECURITY_REPO_PAT: $(YourPatForSecurityRepo) # パイプライン変数 (Secret) で設定してください
-
-  # 3. Snyk APIトークン
+  # 1. Snyk APIトークン
   # Azure DevOpsの「Variables」で 'SNYK_API_TOKEN' という名前で、値をSnykのトークンにして「Keep this value secret」にチェックを入れてください。
-  # SNYK_API_TOKEN: $(YourSnykApiToken) # パイプライン変数 (Secret) で設定してください
+  SNYK_API_TOKEN: $(YourSnykApiToken) # パイプライン変数 (Secret) で設定してください
 
   # --- 固定値または環境に応じて変更する変数 ---
-  TARGET_BRANCH_SECURITY_REPO: 'main' # セキュリティチェック専用リポジトリのターゲットブランチ
-  COMMIT_USER_EMAIL: 'pipeline@azuredevops.com' # Gitコミット時のメールアドレス
-  COMMIT_USER_NAME: 'Azure DevOps Pipeline' # Gitコミット時のユーザー名
-  TEMP_SECURITY_REPO_PATH: '$(Agent.TempDirectory)/security-repo-clone' # セキュリティリポジトリをクローンする一時パス
+  # TARGET_BRANCH_SECURITY_REPO: 'main' # CI直接スキャンでは通常不要
+  COMMIT_USER_EMAIL: 'pipeline@azuredevops.com' # Gitコミット時のメールアドレス (SnykがGit情報を利用する場合など、必要に応じて残す)
+  COMMIT_USER_NAME: 'Azure DevOps Pipeline' # Gitコミット時のユーザー名 (同上)
+  # TEMP_SECURITY_REPO_PATH: '$(Agent.TempDirectory)/security-repo-clone' # CI直接スキャンでは通常不要
 
 steps:
 - checkout: self # プルリクエスト元のリポジトリ (ソースリポジトリ) をチェックアウト
   persistCredentials: true # 後続のステップで `System.AccessToken` を使用できるようにする場合 (今回はPATを使用)
 
 - task: Bash@3
-  displayName: 'Configure Git for Security Repo'
+  displayName: 'Configure Git (if needed by Snyk or other tools)'
   inputs:
     targetType: 'inline'
     script: |
       git config --global user.email "$(COMMIT_USER_EMAIL)"
       git config --global user.name "$(COMMIT_USER_NAME)"
-      echo "Git user configured."
+      echo "Git user configured (if Snyk or other tools require local Git info)."
 
-- task: Bash@3
-  displayName: 'Copy PR content to Security Repository'
-  env:
-    # 環境変数としてPATをスクリプトに渡す
-    AZURE_DEVOPS_PAT: $(SECURITY_REPO_PAT)
-  inputs:
-    targetType: 'inline'
-    script: |
-      set -eo pipefail # エラー発生時、およびパイプラインでエラーが発生した場合はスクリプトを終了
-
-      # 1. セキュリティチェック専用リポジトリをクローン
-      #    PAT認証を使用するため、URLにユーザー情報を含めてエンコードする
-      #    HTTPS URLの 'https://' の後に 'anything:$(AZURE_DEVOPS_PAT)@' を挿入
-      ENCODED_PAT_SECURITY_REPO_URL=$(echo "$(SECURITY_REPO_URL)" | sed "s|https://|https://anything:$(AZURE_DEVOPS_PAT)@|")
-
-      echo "Cloning security repository from $(SECURITY_REPO_URL)..."
-      git clone "$ENCODED_PAT_SECURITY_REPO_URL" "$(TEMP_SECURITY_REPO_PATH)"
-      cd "$(TEMP_SECURITY_REPO_PATH)"
-
-      # ターゲットブランチが存在するか確認し、なければ作成
-      if git show-ref --verify --quiet refs/heads/$(TARGET_BRANCH_SECURITY_REPO); then
-        git checkout $(TARGET_BRANCH_SECURITY_REPO)
-      else
-        git checkout -b $(TARGET_BRANCH_SECURITY_REPO)
-      fi
-      git pull origin $(TARGET_BRANCH_SECURITY_REPO) # 最新の状態に更新 (念のため)
-
-      # 2. プルリクエスト元のブランチの内容をコピー (既存の内容を削除してからコピー)
-      echo "Cleaning up existing files in clone (excluding .git)..."
-      # .git ディレクトリ以外のすべてのファイルとディレクトリを削除
-      find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} \;
-
-      echo "Copying files from PR source ($(Build.SourcesDirectory)) to security repository clone..."
-      # ビルドソースディレクトリのすべての内容をコピー (ドットファイル含む)
-      rsync -av --exclude='.git' "$(Build.SourcesDirectory)/" .
-
-      # 3. 変更をコミットしてプッシュ
-      echo "Committing and pushing changes to security repository..."
-      git add -A
-      # 変更がある場合のみコミットとプッシュを実行
-      if ! git diff-index --quiet HEAD; then
-        git commit -m "Sync content from PR $(System.PullRequest.PullRequestId) ($(Build.SourceBranchName)) for security scan"
-        git push origin $(TARGET_BRANCH_SECURITY_REPO)
-        echo "Changes pushed to security repository."
-      else
-        echo "No changes to commit to security repository."
-      fi
-    failOnStderr: true # 標準エラー出力があった場合にタスクを失敗させる
+# Copy PR content to Security Repository タスクは削除されました
 
 - task: NodeTool@0 # Snyk CLIの実行にはNode.jsが必要
   inputs:
@@ -107,10 +49,10 @@ steps:
     script: |
       npm install -g snyk
       snyk --version
-    failOnStderr: true
+    failOnStderr: false
 
 - task: Bash@3
-  displayName: 'Run Snyk Vulnerability Check'
+  displayName: 'Run Snyk Vulnerability Check on Source Repository'
   env:
     SNYK_TOKEN: $(SNYK_API_TOKEN) # 環境変数としてSnykトークンを渡す
   inputs:
@@ -118,22 +60,18 @@ steps:
     script: |
       set -eo pipefail # パイプラインでエラーが発生した場合、またはコマンドがエラーを返した場合にスクリプトを終了
 
+      echo "Installing Python dependencies..."
+      pip install -r e2e/aitest/requirements.txt
+
       echo "Authenticating Snyk..."
       snyk auth "$SNYK_TOKEN"
 
-      echo "Running Snyk scan in $(TEMP_SECURITY_REPO_PATH)..."
-      cd "$(TEMP_SECURITY_REPO_PATH)"
+      echo "Running Snyk scan in $(Build.SourcesDirectory)..."
 
-      # Snykで脆弱性チェックを実行
-      # --severity-threshold=critical を設定すると、Criticalな脆弱性が検出された場合に
-      # Snyk CLIが非ゼロの終了コードを返し、タスクが失敗します。
-      # これにより、パイプライン全体が失敗します。
-      # プロジェクトの構成に応じて、`snyk test` や `snyk code test` などを使い分けてください。
-      # また、`--all-projects` や `--file=pom.xml` などのオプションも検討してください。
-      snyk test --severity-threshold=critical
+      snyk test --all-projects --severity-threshold=critical
 
       # もし `snyk code test` (SAST) も実行したい場合は以下のように追加できます。
-      # snyk code test --severity-threshold=critical
+      snyk code test --all-projects
 
       echo "Snyk scan completed."
     failOnStderr: true # 標準エラー出力があった場合にタスクを失敗させる (Snykがエラーコードで制御するので通常は不要だが念のため)
