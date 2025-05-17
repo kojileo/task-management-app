@@ -48,7 +48,7 @@ jobs:
       - name: Run unit tests with coverage
         working-directory: backend
         run: |
-          dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --filter "Category=Unit"
+          dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --results-directory ./coverage/unit
           if [ $? -ne 0 ]; then
             echo "Unit tests failed"
             exit 1
@@ -57,7 +57,7 @@ jobs:
       - name: Run integration tests with coverage
         working-directory: backend
         run: |
-          dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --filter "Category=Integration"
+          dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --results-directory ./coverage/integration
           if [ $? -ne 0 ]; then
             echo "Integration tests failed"
             exit 1
@@ -66,22 +66,37 @@ jobs:
       - name: Check coverage thresholds
         working-directory: backend
         run: |
+          # カバレッジレポートのパスを確認
+          echo "Listing coverage directories:"
+          ls -la coverage/unit
+          ls -la coverage/integration
+
           # ユニットテストのカバレッジチェック
-          if [ $(grep -o '"lineRate": [0-9]*\.[0-9]*' coverage/unit/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 85 ]; then
+          UNIT_COVERAGE=$(find ./coverage/unit -name "coverage.cobertura.xml" -type f -exec cat {} \; | grep -o '"lineRate": [0-9]*\.[0-9]*' | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}')
+          echo "Unit test line coverage: $UNIT_COVERAGE%"
+          if [ "$UNIT_COVERAGE" -lt 85 ]; then
             echo "Unit test line coverage is below 85%"
             exit 1
           fi
-          if [ $(grep -o '"branchRate": [0-9]*\.[0-9]*' coverage/unit/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 75 ]; then
+
+          UNIT_BRANCH_COVERAGE=$(find ./coverage/unit -name "coverage.cobertura.xml" -type f -exec cat {} \; | grep -o '"branchRate": [0-9]*\.[0-9]*' | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}')
+          echo "Unit test branch coverage: $UNIT_BRANCH_COVERAGE%"
+          if [ "$UNIT_BRANCH_COVERAGE" -lt 75 ]; then
             echo "Unit test branch coverage is below 75%"
             exit 1
           fi
 
           # インテグレーションテストのカバレッジチェック
-          if [ $(grep -o '"lineRate": [0-9]*\.[0-9]*' coverage/integration/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 60 ]; then
+          INT_COVERAGE=$(find ./coverage/integration -name "coverage.cobertura.xml" -type f -exec cat {} \; | grep -o '"lineRate": [0-9]*\.[0-9]*' | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}')
+          echo "Integration test line coverage: $INT_COVERAGE%"
+          if [ "$INT_COVERAGE" -lt 60 ]; then
             echo "Integration test line coverage is below 60%"
             exit 1
           fi
-          if [ $(grep -o '"branchRate": [0-9]*\.[0-9]*' coverage/integration/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 50 ]; then
+
+          INT_BRANCH_COVERAGE=$(find ./coverage/integration -name "coverage.cobertura.xml" -type f -exec cat {} \; | grep -o '"branchRate": [0-9]*\.[0-9]*' | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}')
+          echo "Integration test branch coverage: $INT_BRANCH_COVERAGE%"
+          if [ "$INT_BRANCH_COVERAGE" -lt 50 ]; then
             echo "Integration test branch coverage is below 50%"
             exit 1
           fi
