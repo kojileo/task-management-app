@@ -24,10 +24,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore TaskManagement.sln
 
       - name: Build with StyleCop
-        run: dotnet build /p:TreatWarningsAsErrors=true
+        run: dotnet build TaskManagement.sln /p:TreatWarningsAsErrors=true
 
       - name: Security scan
         run: dotnet list package --vulnerable
