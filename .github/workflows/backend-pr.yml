@@ -13,7 +13,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: task-management-app
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -21,19 +24,19 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        working-directory: backend
+        working-directory: task-management-app/backend
         run: dotnet restore
 
       - name: Build with StyleCop
-        working-directory: backend
+        working-directory: task-management-app/backend
         run: dotnet build /p:TreatWarningsAsErrors=true
 
       - name: Security scan
-        working-directory: backend
+        working-directory: task-management-app/backend
         run: dotnet list package --vulnerable
 
       - name: Run unit tests with coverage
-        working-directory: backend
+        working-directory: task-management-app/backend
         run: |
           dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --filter "Category=Unit"
           if [ $? -ne 0 ]; then
@@ -42,7 +45,7 @@ jobs:
           fi
 
       - name: Run integration tests with coverage
-        working-directory: backend
+        working-directory: task-management-app/backend
         run: |
           dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --filter "Category=Integration"
           if [ $? -ne 0 ]; then
@@ -51,7 +54,7 @@ jobs:
           fi
 
       - name: Check coverage thresholds
-        working-directory: backend
+        working-directory: task-management-app/backend
         run: |
           # ユニットテストのカバレッジチェック
           if [ $(grep -o '"lineRate": [0-9]*\.[0-9]*' coverage/unit/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 85 ]; then
@@ -78,6 +81,6 @@ jobs:
         with:
           name: backend-coverage-reports
           path: |
-            backend/coverage/unit
-            backend/coverage/integration
+            task-management-app/backend/coverage/unit
+            task-management-app/backend/coverage/integration
           retention-days: 7 
