@@ -1,0 +1,111 @@
+name: Backend PR Pipeline
+
+on:
+  pull_request:
+    branches:
+      - develop
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-pr.yml'
+
+jobs:
+  backend-pr-checks:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Debug directory structure
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing root directory:"
+          ls -la
+          echo "Listing backend directory:"
+          ls -la backend
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        working-directory: backend
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing current directory:"
+          ls -la
+          dotnet restore
+
+      - name: Build with StyleCop
+        working-directory: backend
+        run: dotnet build /p:TreatWarningsAsErrors=true
+
+      - name: Security scan
+        working-directory: backend
+        run: dotnet list package --vulnerable
+
+      - name: Run unit tests with coverage
+        working-directory: backend
+        run: |
+          dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --results-directory ./coverage/unit
+          if [ $? -ne 0 ]; then
+            echo "Unit tests failed"
+            exit 1
+          fi
+
+      - name: Run integration tests with coverage
+        working-directory: backend
+        run: |
+          dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --results-directory ./coverage/integration
+          if [ $? -ne 0 ]; then
+            echo "Integration tests failed"
+            exit 1
+          fi
+
+      - name: Check coverage thresholds
+        working-directory: backend
+        run: |
+          # カバレッジレポートのパスを確認
+          echo "Listing coverage directories:"
+          ls -la coverage/unit
+          ls -la coverage/integration
+
+          # ユニットテストのカバレッジチェック
+          UNIT_COVERAGE=$(find ./coverage/unit -name "coverage.cobertura.xml" -type f -exec cat {} \; | grep -o '"lineRate": [0-9]*\.[0-9]*' | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}')
+          echo "Unit test line coverage: $UNIT_COVERAGE%"
+          if [ "$UNIT_COVERAGE" -lt 85 ]; then
+            echo "Unit test line coverage is below 85%"
+            exit 1
+          fi
+
+          UNIT_BRANCH_COVERAGE=$(find ./coverage/unit -name "coverage.cobertura.xml" -type f -exec cat {} \; | grep -o '"branchRate": [0-9]*\.[0-9]*' | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}')
+          echo "Unit test branch coverage: $UNIT_BRANCH_COVERAGE%"
+          if [ "$UNIT_BRANCH_COVERAGE" -lt 75 ]; then
+            echo "Unit test branch coverage is below 75%"
+            exit 1
+          fi
+
+          # インテグレーションテストのカバレッジチェック
+          INT_COVERAGE=$(find ./coverage/integration -name "coverage.cobertura.xml" -type f -exec cat {} \; | grep -o '"lineRate": [0-9]*\.[0-9]*' | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}')
+          echo "Integration test line coverage: $INT_COVERAGE%"
+          if [ "$INT_COVERAGE" -lt 60 ]; then
+            echo "Integration test line coverage is below 60%"
+            exit 1
+          fi
+
+          INT_BRANCH_COVERAGE=$(find ./coverage/integration -name "coverage.cobertura.xml" -type f -exec cat {} \; | grep -o '"branchRate": [0-9]*\.[0-9]*' | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}')
+          echo "Integration test branch coverage: $INT_BRANCH_COVERAGE%"
+          if [ "$INT_BRANCH_COVERAGE" -lt 50 ]; then
+            echo "Integration test branch coverage is below 50%"
+            exit 1
+          fi
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-reports
+          path: |
+            backend/coverage/unit
+            backend/coverage/integration
+          retention-days: 7 
