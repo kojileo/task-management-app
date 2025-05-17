@@ -12,7 +12,11 @@ using TaskManagement.API.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-builder.Services.AddControllers().AddJsonOptions(options =>
+builder.Services.AddControllersWithViews(options =>
+{
+    options.SuppressAsyncSuffixInActionNames = false;
+    options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+}).AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     options.JsonSerializerOptions.PropertyNamingPolicy = null;
