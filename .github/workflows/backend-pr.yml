@@ -18,6 +18,16 @@ jobs:
         with:
           path: task-management-app
 
+      - name: Debug directory structure
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing root directory:"
+          ls -la
+          echo "Listing task-management-app directory:"
+          ls -la task-management-app
+          echo "Listing backend directory:"
+          ls -la task-management-app/backend
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -25,7 +35,11 @@ jobs:
 
       - name: Restore dependencies
         working-directory: task-management-app/backend
-        run: dotnet restore
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing current directory:"
+          ls -la
+          dotnet restore
 
       - name: Build with StyleCop
         working-directory: task-management-app/backend
