@@ -180,7 +180,7 @@ namespace TaskManagement.Tests.IntegrationTests
         }
 
         [Fact]
-        public async Task Update_WithInvalidId_ReturnsBadRequest()
+        public async Task Update_WithInvalidId_ReturnsNotFound()
         {
             // Arrange
             var task = new TaskItem
@@ -199,7 +199,7 @@ namespace TaskManagement.Tests.IntegrationTests
                 CreateJsonContent(task));
 
             // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
         [Fact]
@@ -297,13 +297,13 @@ namespace TaskManagement.Tests.IntegrationTests
         }
 
         [Fact]
-        public async Task Delete_WithInvalidId_ReturnsBadRequest()
+        public async Task Delete_WithInvalidId_ReturnsNotFound()
         {
             // Act
             var response = await _client.DeleteAsync("/api/task/999");
 
             // Assert
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
 
         [Fact]
