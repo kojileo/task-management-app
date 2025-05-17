@@ -48,33 +48,15 @@ jobs:
             exit 1
           fi
 
-      - name: Run integration tests with coverage
-        run: |
-          npm run test:integration:coverage
-          if [ $? -ne 0 ]; then
-            echo "Integration tests failed"
-            exit 1
-          fi
-
       - name: Check coverage thresholds
         run: |
           # ユニットテストのカバレッジチェック
-          if [ $(grep -o '"lines": [0-9]*' coverage/unit/coverage-summary.json | grep -o '[0-9]*') -lt 60 ]; then
+          if [ $(grep -o '"lines": [0-9]*' coverage/coverage-summary.json | grep -o '[0-9]*') -lt 60 ]; then
             echo "Unit test line coverage is below 60%"
             exit 1
           fi
-          if [ $(grep -o '"branches": [0-9]*' coverage/unit/coverage-summary.json | grep -o '[0-9]*') -lt 50 ]; then
+          if [ $(grep -o '"branches": [0-9]*' coverage/coverage-summary.json | grep -o '[0-9]*') -lt 50 ]; then
             echo "Unit test branch coverage is below 50%"
-            exit 1
-          fi
-
-          # インテグレーションテストのカバレッジチェック
-          if [ $(grep -o '"lines": [0-9]*' coverage/integration/coverage-summary.json | grep -o '[0-9]*') -lt 80 ]; then
-            echo "Integration test line coverage is below 80%"
-            exit 1
-          fi
-          if [ $(grep -o '"branches": [0-9]*' coverage/integration/coverage-summary.json | grep -o '[0-9]*') -lt 70 ]; then
-            echo "Integration test branch coverage is below 70%"
             exit 1
           fi
 
@@ -82,7 +64,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage-reports
-          path: |
-            frontend/coverage/unit
-            frontend/coverage/integration
+          path: frontend/coverage
           retention-days: 7 

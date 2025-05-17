@@ -11,9 +11,6 @@ on:
 jobs:
   backend-pr-checks:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: backend
 
     steps:
       - uses: actions/checkout@v4
@@ -24,15 +21,19 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore TaskManagement.sln
+        working-directory: backend
+        run: dotnet restore
 
       - name: Build with StyleCop
-        run: dotnet build TaskManagement.sln /p:TreatWarningsAsErrors=true
+        working-directory: backend
+        run: dotnet build /p:TreatWarningsAsErrors=true
 
       - name: Security scan
+        working-directory: backend
         run: dotnet list package --vulnerable
 
       - name: Run unit tests with coverage
+        working-directory: backend
         run: |
           dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --filter "Category=Unit"
           if [ $? -ne 0 ]; then
@@ -41,6 +42,7 @@ jobs:
           fi
 
       - name: Run integration tests with coverage
+        working-directory: backend
         run: |
           dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --filter "Category=Integration"
           if [ $? -ne 0 ]; then
@@ -49,6 +51,7 @@ jobs:
           fi
 
       - name: Check coverage thresholds
+        working-directory: backend
         run: |
           # ユニットテストのカバレッジチェック
           if [ $(grep -o '"lineRate": [0-9]*\.[0-9]*' coverage/unit/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 85 ]; then
