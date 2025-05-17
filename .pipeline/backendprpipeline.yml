@@ -1,92 +1,80 @@
-name: TaskManagement CI/CD
+name: Backend PR Pipeline
 
 on:
-  push:
-    branches: [ main, develop ]
   pull_request:
-    branches: [ main, develop ]
-  workflow_dispatch:
+    branches:
+      - develop
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-pr.yml'
 
 jobs:
-  frontend-static-analysis:
+  backend-pr-checks:
     runs-on: ubuntu-latest
-    
+    defaults:
+      run:
+        working-directory: backend
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: './frontend/package-lock.json'
-    
-    - name: 静的解析実行
-      run: |
-        cd frontend
-        npm ci
-        npm run static-analysis
-      
-    - name: テスト結果の保存
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: frontend-static-analysis-results
-        path: frontend/reports
-        retention-days: 7
-        
-  frontend-unit-test:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: './frontend/package-lock.json'
-    
-    - name: 単体テスト実行
-      run: |
-        cd frontend
-        npm ci
-        npm run test:coverage
-      
-    - name: カバレッジレポートアップロード
-      if: success()
-      uses: codecov/codecov-action@v3
-      with:
-        directory: frontend/coverage
-        fail_ci_if_error: true
-        
-  backend-static-analysis:
-    runs-on: windows-latest
-    
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: '8.0.x'
-    
-    - name: .NET ツールインストール
-      run: |
-        dotnet tool install -g dotnet-code-metrics
-    
-    - name: 静的解析実行
-      run: |
-        cd backend/ci
-        pwsh -File run-backend-static.ps1
-      
-    - name: コードメトリクスレポートのアップロード
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: backend-code-metrics
-        path: backend/TaskManagement.API/code-metrics.md
-        retention-days: 7
-        
-  # バックエンドテストなど他のジョブも追加 
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build with StyleCop
+        run: dotnet build /p:TreatWarningsAsErrors=true
+
+      - name: Security scan
+        run: dotnet list package --vulnerable
+
+      - name: Run unit tests with coverage
+        run: |
+          dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --filter "Category=Unit"
+          if [ $? -ne 0 ]; then
+            echo "Unit tests failed"
+            exit 1
+          fi
+
+      - name: Run integration tests with coverage
+        run: |
+          dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --filter "Category=Integration"
+          if [ $? -ne 0 ]; then
+            echo "Integration tests failed"
+            exit 1
+          fi
+
+      - name: Check coverage thresholds
+        run: |
+          # ユニットテストのカバレッジチェック
+          if [ $(grep -o '"lineRate": [0-9]*\.[0-9]*' coverage/unit/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 85 ]; then
+            echo "Unit test line coverage is below 85%"
+            exit 1
+          fi
+          if [ $(grep -o '"branchRate": [0-9]*\.[0-9]*' coverage/unit/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 75 ]; then
+            echo "Unit test branch coverage is below 75%"
+            exit 1
+          fi
+
+          # インテグレーションテストのカバレッジチェック
+          if [ $(grep -o '"lineRate": [0-9]*\.[0-9]*' coverage/integration/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 60 ]; then
+            echo "Integration test line coverage is below 60%"
+            exit 1
+          fi
+          if [ $(grep -o '"branchRate": [0-9]*\.[0-9]*' coverage/integration/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 50 ]; then
+            echo "Integration test branch coverage is below 50%"
+            exit 1
+          fi
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage-reports
+          path: |
+            backend/coverage/unit
+            backend/coverage/integration
+          retention-days: 7
