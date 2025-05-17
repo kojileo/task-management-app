@@ -25,7 +25,9 @@ namespace TaskManagement.Tests.IntegrationTests
             {
                 PropertyNamingPolicy = null,
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                PropertyNameCaseInsensitive = true
+                PropertyNameCaseInsensitive = true,
+                MaxDepth = 64,
+                ReadCommentHandling = JsonCommentHandling.Skip
             };
             _jsonOptions.Converters.Add(new JsonStringEnumConverter());
         }
