@@ -15,18 +15,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          path: task-management-app
 
       - name: Debug directory structure
         run: |
           echo "Current directory: $(pwd)"
           echo "Listing root directory:"
           ls -la
-          echo "Listing task-management-app directory:"
-          ls -la task-management-app
           echo "Listing backend directory:"
-          ls -la task-management-app/backend
+          ls -la backend
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -34,7 +30,7 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        working-directory: task-management-app/backend
+        working-directory: backend
         run: |
           echo "Current directory: $(pwd)"
           echo "Listing current directory:"
@@ -42,15 +38,15 @@ jobs:
           dotnet restore
 
       - name: Build with StyleCop
-        working-directory: task-management-app/backend
+        working-directory: backend
         run: dotnet build /p:TreatWarningsAsErrors=true
 
       - name: Security scan
-        working-directory: task-management-app/backend
+        working-directory: backend
         run: dotnet list package --vulnerable
 
       - name: Run unit tests with coverage
-        working-directory: task-management-app/backend
+        working-directory: backend
         run: |
           dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --filter "Category=Unit"
           if [ $? -ne 0 ]; then
@@ -59,7 +55,7 @@ jobs:
           fi
 
       - name: Run integration tests with coverage
-        working-directory: task-management-app/backend
+        working-directory: backend
         run: |
           dotnet test TaskManagement.Tests/TaskManagement.Tests.csproj --collect:"XPlat Code Coverage" --filter "Category=Integration"
           if [ $? -ne 0 ]; then
@@ -68,7 +64,7 @@ jobs:
           fi
 
       - name: Check coverage thresholds
-        working-directory: task-management-app/backend
+        working-directory: backend
         run: |
           # ユニットテストのカバレッジチェック
           if [ $(grep -o '"lineRate": [0-9]*\.[0-9]*' coverage/unit/coverage.cobertura.xml | grep -o '[0-9]*\.[0-9]*' | awk '{print int($1 * 100)}') -lt 85 ]; then
@@ -95,6 +91,6 @@ jobs:
         with:
           name: backend-coverage-reports
           path: |
-            task-management-app/backend/coverage/unit
-            task-management-app/backend/coverage/integration
+            backend/coverage/unit
+            backend/coverage/integration
           retention-days: 7 
